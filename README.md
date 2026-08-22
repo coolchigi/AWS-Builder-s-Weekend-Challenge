@@ -58,7 +58,7 @@ Invoke it a few times to seed the archive before you screenshot it.
 - [ ] `sam deploy` succeeds, SNS subscription confirmed, live site loads
 - [ ] Invoked a few times so the archive has several words
 - [ ] Screenshots of the page + the email (proof it works)
-- [ ] Article published from `ARTICLE_TEMPLATE.md`, 500+ words
+- [ ] Article published from `docs/ARTICLE_TEMPLATE.md`, 500+ words
 - [ ] Title contains exactly: `Weekend Creative Agent Challenge: Daily Lexicon`
 - [ ] Tag `#agents` added
 - [ ] Submitted early (first 101 qualifying entries win)
