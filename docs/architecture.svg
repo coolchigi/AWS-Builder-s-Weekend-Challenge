@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" font-family="'Helvetica Neue',Arial,sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#5a6270"/>
+    </marker>
+    <style>
+      .box { rx: 12; stroke-width: 2; }
+      .svc { font-size: 15px; font-weight: 700; fill: #1a1f2b; }
+      .sub { font-size: 11.5px; fill: #5a6270; }
+      .edge { stroke: #5a6270; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .elabel { font-size: 11px; fill: #5a6270; }
+      .title { font-size: 20px; font-weight: 800; fill: #1a1f2b; }
+      .kicker { font-size: 12px; font-weight: 700; fill: #9a5b2e; letter-spacing: 2px; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="960" height="520" fill="#ffffff"/>
+  <text x="40" y="46" class="kicker">DAILY LEXICON</text>
+  <text x="40" y="72" class="title">Always-on creative agent</text>
+
+  <!-- EventBridge -->
+  <rect class="box" x="40" y="210" width="150" height="86" fill="#eef4ff" stroke="#4b7bec"/>
+  <text x="115" y="248" text-anchor="middle" class="svc">EventBridge</text>
+  <text x="115" y="268" text-anchor="middle" class="sub">daily schedule</text>
+  <text x="115" y="284" text-anchor="middle" class="sub">(no server idles)</text>
+
+  <!-- Lambda (center) -->
+  <rect class="box" x="330" y="196" width="180" height="114" fill="#fff1e6" stroke="#f0932b"/>
+  <text x="420" y="240" text-anchor="middle" class="svc">AWS Lambda</text>
+  <text x="420" y="262" text-anchor="middle" class="sub">remember · sense</text>
+  <text x="420" y="278" text-anchor="middle" class="sub">create · publish</text>
+  <text x="420" y="294" text-anchor="middle" class="sub">Python 3.12</text>
+
+  <!-- Bedrock (top) -->
+  <rect class="box" x="330" y="60" width="180" height="86" fill="#f0eaff" stroke="#8854d0"/>
+  <text x="420" y="98" text-anchor="middle" class="svc">Bedrock · Nova</text>
+  <text x="420" y="118" text-anchor="middle" class="sub">choose the word,</text>
+  <text x="420" y="134" text-anchor="middle" class="sub">write the verse</text>
+
+  <!-- DynamoDB (bottom) -->
+  <rect class="box" x="330" y="374" width="180" height="86" fill="#e6f7f1" stroke="#20bf6b"/>
+  <text x="420" y="412" text-anchor="middle" class="svc">DynamoDB</text>
+  <text x="420" y="432" text-anchor="middle" class="sub">memory: never repeat,</text>
+  <text x="420" y="448" text-anchor="middle" class="sub">evolve over time</text>
+
+  <!-- S3 (right top) -->
+  <rect class="box" x="670" y="150" width="180" height="86" fill="#e6f7f1" stroke="#20bf6b"/>
+  <text x="760" y="188" text-anchor="middle" class="svc">Amazon S3</text>
+  <text x="760" y="208" text-anchor="middle" class="sub">the page waiting</text>
+  <text x="760" y="224" text-anchor="middle" class="sub">for you</text>
+
+  <!-- SNS (right bottom) -->
+  <rect class="box" x="670" y="270" width="180" height="86" fill="#fdeef0" stroke="#eb3b5a"/>
+  <text x="760" y="308" text-anchor="middle" class="svc">Amazon SNS</text>
+  <text x="760" y="328" text-anchor="middle" class="sub">emails you</text>
+  <text x="760" y="344" text-anchor="middle" class="sub">the word</text>
+
+  <!-- edges -->
+  <path class="edge" d="M190,253 L326,253"/>
+  <text x="258" y="245" text-anchor="middle" class="elabel">wakes</text>
+
+  <path class="edge" d="M420,196 L420,150"/>
+  <path class="edge" d="M452,150 L452,192" stroke="#8854d0"/>
+  <text x="500" y="176" class="elabel">reason</text>
+
+  <path class="edge" d="M405,310 L405,370"/>
+  <path class="edge" d="M435,370 L435,314" stroke="#20bf6b"/>
+  <text x="470" y="346" class="elabel">read + write</text>
+
+  <path class="edge" d="M510,240 L666,193"/>
+  <text x="590" y="205" text-anchor="middle" class="elabel">publish</text>
+
+  <path class="edge" d="M510,285 L666,308"/>
+  <text x="590" y="312" text-anchor="middle" class="elabel">deliver</text>
+
+  <!-- reader -->
+  <circle cx="905" cy="193" r="7" fill="#5a6270"/>
+  <circle cx="905" cy="313" r="7" fill="#5a6270"/>
+  <path class="edge" d="M850,193 L890,193"/>
+  <path class="edge" d="M850,313 L890,313"/>
+</svg>

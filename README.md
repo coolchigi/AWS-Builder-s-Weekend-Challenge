@@ -1,5 +1,8 @@
 # Daily Lexicon
 
+[![CI](https://github.com/coolchigi/AWS-Builder-s-Weekend-Challenge/actions/workflows/ci.yml/badge.svg)](https://github.com/coolchigi/AWS-Builder-s-Weekend-Challenge/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 An always-on creative agent for the AWS Builder Center **"Set your creative app
 free"** weekend challenge (Level 200).
 
@@ -12,12 +15,10 @@ waiting for you.
 
 ## Architecture
 
-```
-EventBridge (daily) --> Lambda --> Bedrock (Nova)   conjure the word + verse
-                          |  \---> DynamoDB          memory: never repeat, evolve
-                          |------> S3 static site    the page waiting for you
-                          \------> SNS               emails you the word
-```
+![Architecture](docs/architecture.png)
+
+One Lambda is the whole orchestration layer: it reads its memory, senses the
+day, makes one Bedrock call, and produces two outputs, a page and an email.
 
 ## Prerequisites
 
@@ -62,6 +63,26 @@ Invoke it a few times to seed the archive before you screenshot it.
 - [ ] Title contains exactly: `Weekend Creative Agent Challenge: Daily Lexicon`
 - [ ] Tag `#agents` added
 - [ ] Submitted early (first 101 qualifying entries win)
+
+## Development
+
+```bash
+pip install -r requirements-dev.txt
+pytest -q                 # unit tests for prompts, parsing, validation, rendering
+cfn-lint template.yaml    # validate the SAM template
+```
+
+CI runs both on every push (see `.github/workflows/ci.yml`).
+
+## Production notes
+
+- **Idempotent:** one word per day. A retry or double-fire re-publishes the page
+  and exits instead of emailing you twice (`src/app.py`).
+- **Resilient generation:** Bedrock calls use adaptive retries; malformed model
+  output is validated and regenerated before anything publishes (`src/agent.py`).
+- **Least privilege:** the function's Bedrock permission is scoped to foundation
+  models, not `*`.
+- **Observable:** structured JSON logs to CloudWatch on every run.
 
 ## Re-skin note
 

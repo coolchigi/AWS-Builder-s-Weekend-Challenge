@@ -98,7 +98,7 @@ Resources:
             - Sid: InvokeBedrock
               Effect: Allow
               Action: bedrock:InvokeModel
-              Resource: "*"
+              Resource: !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/*"
         - DynamoDBCrudPolicy:
             TableName: !Ref WordMemory
         - S3CrudPolicy:
