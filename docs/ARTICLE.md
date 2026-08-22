@@ -1,9 +1,9 @@
 <!--
 FINAL ARTICLE - copy the content below into the AWS Builder Center editor.
-Before you publish, do these three things:
-  1. Replace [YOUR LIVE URL] with your deployed S3 website URL.
-  2. Upload docs/architecture.png where the diagram is referenced.
-  3. Add a screenshot of your real page + email (swap the sample word if you like).
+The live URL and repo link are already filled in. Before you publish:
+  1. Upload docs/architecture.png where the diagram is referenced.
+  2. Add a screenshot of your real page + email (swap the Petrichor sample for
+     your own first word, e.g. Sonder, if you like).
 Everything else is ready as-is. Title and tag are exact per the challenge terms.
 -->
 
@@ -116,7 +116,7 @@ for months, that trade was worth it.
 
 ## Link to app or repo
 
-- **Live page:** [YOUR LIVE URL]
+- **Live page:** http://weekend-agent-sitebucket-u45d4xwbqfej.s3-website-us-east-1.amazonaws.com
 - **Code:** https://github.com/coolchigi/AWS-Builder-s-Weekend-Challenge
 
 The repository includes the full SAM template, the source, a test suite, CI, and
