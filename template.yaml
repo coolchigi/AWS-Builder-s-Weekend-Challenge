@@ -1,0 +1,121 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Daily Lexicon - an always-on creative agent. Each day EventBridge wakes a
+  Lambda that reasons with Amazon Bedrock (Nova) to conjure a new, uncommon word
+  themed to the day and weather, remembers past words in DynamoDB so it never
+  repeats, publishes a web page to S3, and emails you the word via SNS.
+
+Parameters:
+  NotifyEmail:
+    Type: String
+    Description: Email that receives the daily word (confirm the SNS subscription once).
+  Schedule:
+    Type: String
+    Default: "cron(0 13 * * ? *)"
+    Description: When the agent creates. Default 13:00 UTC daily. e.g. "rate(1 day)".
+  ModelId:
+    Type: String
+    Default: "amazon.nova-lite-v1:0"
+    Description: Bedrock model id. Nova Lite is cheap and Free-Tier-friendly.
+  WeatherLatLon:
+    Type: String
+    Default: "40.71,-74.01"
+    Description: "lat,lon used to theme the word to today's weather (Open-Meteo, no key)."
+
+Globals:
+  Function:
+    Timeout: 60
+    MemorySize: 256
+    Runtime: python3.12
+
+Resources:
+  WordMemory:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: word
+          AttributeType: S
+      KeySchema:
+        - AttributeName: word
+          KeyType: HASH
+
+  SiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      # Public static website so you get a live URL to show in your submission.
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      WebsiteConfiguration:
+        IndexDocument: index.html
+
+  SiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SiteBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: PublicReadForWebsite
+            Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub "${SiteBucket.Arn}/*"
+
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: Daily Lexicon
+
+  AlertSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      Endpoint: !Ref NotifyEmail
+      TopicArn: !Ref AlertTopic
+
+  AgentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: app.handler
+      Environment:
+        Variables:
+          MODEL_ID: !Ref ModelId
+          TABLE_NAME: !Ref WordMemory
+          BUCKET_NAME: !Ref SiteBucket
+          ALERT_TOPIC_ARN: !Ref AlertTopic
+          WEATHER_LATLON: !Ref WeatherLatLon
+      Policies:
+        - Statement:
+            - Sid: InvokeBedrock
+              Effect: Allow
+              Action: bedrock:InvokeModel
+              Resource: "*"
+        - DynamoDBCrudPolicy:
+            TableName: !Ref WordMemory
+        - S3CrudPolicy:
+            BucketName: !Ref SiteBucket
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt AlertTopic.TopicName
+      Events:
+        Tick:
+          Type: Schedule
+          Properties:
+            Schedule: !Ref Schedule
+            Description: Wake the agent daily to create a new word.
+
+Outputs:
+  FunctionName:
+    Description: Lambda function name (invoke it manually to create today's word now)
+    Value: !Ref AgentFunction
+  SiteURL:
+    Description: Live web page for your daily word (put this in your submission)
+    Value: !GetAtt SiteBucket.WebsiteURL

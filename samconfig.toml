@@ -1,0 +1,10 @@
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "weekend-agent"
+resolve_s3 = true
+region = "us-east-1"          # Nova models live in us-east-1
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = false
+# Fill NotifyEmail here, or pass it on the CLI with --parameter-overrides.
+# parameter_overrides = "NotifyEmail=you@example.com"

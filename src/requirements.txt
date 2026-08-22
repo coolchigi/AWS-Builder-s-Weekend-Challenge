@@ -1,0 +1,2 @@
+# boto3 is preinstalled in the Lambda Python runtime; pin it here only if you
+# need a newer Bedrock feature than the runtime ships. Empty is fine.
