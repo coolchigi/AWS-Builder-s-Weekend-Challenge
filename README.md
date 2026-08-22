@@ -29,11 +29,11 @@ EventBridge (daily) --> Lambda --> Bedrock (Nova)   conjure the word + verse
 
 ```bash
 sam build
-sam deploy --parameter-overrides NotifyEmail=you@example.com WeatherLatLon="40.71,-74.01"
+sam deploy --parameter-overrides NotifyEmail=you@example.com
 ```
 
-Confirm the SNS subscription email once. Set `WeatherLatLon` to your city so the
-word themes to your weather.
+Confirm the SNS subscription email once. `WeatherLatLon` defaults to Ottawa;
+override it for another city.
 
 ## Create today's word right now (don't wait for the schedule)
 

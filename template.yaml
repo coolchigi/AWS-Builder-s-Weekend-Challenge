@@ -20,8 +20,8 @@ Parameters:
     Description: Bedrock model id. Nova Lite is cheap and Free-Tier-friendly.
   WeatherLatLon:
     Type: String
-    Default: "40.71,-74.01"
-    Description: "lat,lon used to theme the word to today's weather (Open-Meteo, no key)."
+    Default: "45.42,-75.70"
+    Description: "lat,lon used to theme the word to today's weather (Open-Meteo, no key). Default: Ottawa."
 
 Globals:
   Function:

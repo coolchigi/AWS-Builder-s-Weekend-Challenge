@@ -73,7 +73,7 @@ def render_email(packet: dict, site_url: str) -> str:
 
 def _weather_mood() -> str:
     """Best-effort weather via Open-Meteo (no key). Falls back gracefully."""
-    lat_lon = os.environ.get("WEATHER_LATLON", "40.71,-74.01")
+    lat_lon = os.environ.get("WEATHER_LATLON", "45.42,-75.70")
     try:
         lat, lon = lat_lon.split(",")
         url = (
