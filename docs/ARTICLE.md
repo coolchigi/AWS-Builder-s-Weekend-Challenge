@@ -116,7 +116,7 @@ for months, that trade was worth it.
 
 ## Link to app or repo
 
-- **Live page:** http://weekend-agent-sitebucket-u45d4xwbqfej.s3-website-us-east-1.amazonaws.com
+- **Live page:** http://weekend-agent-sitebucket-okt65m9uniqf.s3-website-us-east-1.amazonaws.com
 - **Code:** https://github.com/coolchigi/AWS-Builder-s-Weekend-Challenge
 
 The repository includes the full SAM template, the source, a test suite, CI, and
