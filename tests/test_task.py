@@ -2,17 +2,18 @@ import task
 
 
 def test_build_prompt_includes_context_and_memory():
-    ctx = {"date": "2026-08-22", "weekday": "Saturday",
-           "season": "summer", "weather": "warm and rainy"}
+    ctx = {"date": "2026-08-22", "weekday": "Saturday", "season": "summer",
+           "time_of_day": "morning", "weather": "warm and rainy"}
     prompt = task.build_prompt(ctx, ["halcyon", "susurrus"])
     assert "2026-08-22" in prompt
     assert "warm and rainy" in prompt
+    assert "morning" in prompt
     assert "halcyon" in prompt and "susurrus" in prompt
 
 
 def test_build_prompt_handles_empty_memory():
-    ctx = {"date": "2026-08-22", "weekday": "Saturday",
-           "season": "summer", "weather": "clear"}
+    ctx = {"date": "2026-08-22", "weekday": "Saturday", "season": "summer",
+           "time_of_day": "morning", "weather": "clear"}
     assert "(none yet)" in task.build_prompt(ctx, [])
 
 
@@ -28,8 +29,9 @@ def test_render_email_contains_word_and_link():
 def test_collect_returns_expected_shape(monkeypatch):
     monkeypatch.setattr(task, "_weather_mood", lambda: "cold and snowy")
     ctx = task.collect()
-    assert set(ctx) == {"date", "weekday", "season", "weather"}
+    assert set(ctx) == {"date", "weekday", "season", "time_of_day", "weather"}
     assert ctx["season"] in {"winter", "spring", "summer", "autumn"}
+    assert ctx["time_of_day"] in {"night", "morning", "afternoon", "evening"}
     assert ctx["weather"] == "cold and snowy"
 
 

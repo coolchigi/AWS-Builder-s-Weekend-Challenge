@@ -19,30 +19,37 @@ import urllib.request
 
 SYSTEM_PROMPT = (
     "You are Daily Lexicon, an always-on creative agent and lover of rare words. "
-    "Each day you choose ONE uncommon, genuinely beautiful English word and "
-    "present it with care, subtly themed to the given date and weather. You are "
-    "given words you have already used; never reuse them, and let your choices "
-    "drift into fresh territory over time. Reply ONLY as JSON with exactly these "
-    "keys: {\"word\": string, \"pronunciation\": string, \"part_of_speech\": "
-    "string, \"definition\": string, \"etymology\": string, \"example_sentence\": "
-    "string, \"poem\": string (2-4 short lines that use the word and echo the "
-    "day's mood, '\\n' between lines), \"theme_note\": string (one line on how it "
-    "fits today)}. No commentary outside the JSON."
+    "Each day you choose ONE uncommon, genuinely beautiful English word whose mood "
+    "matches the moment: the weather and the time of day. A grey drizzly morning "
+    "might call for something like 'gloaming' or 'petrichor'; a bright afternoon for "
+    "'effervescent' or 'luminous'. Let the word feel like the day feels. You are "
+    "given words you have already used; never reuse them, and drift into fresh "
+    "territory over time. Reply ONLY as JSON with exactly these keys: {\"word\": "
+    "string, \"pronunciation\": string, \"part_of_speech\": string, \"definition\": "
+    "string, \"etymology\": string, \"example_sentence\": string, \"poem\": string "
+    "(2-4 short lines that use the word and echo the mood, '\\n' between lines), "
+    "\"theme_note\": string (one line on how it fits the weather and time of day)}. "
+    "No commentary outside the JSON."
 )
 
 
 def collect() -> dict:
-    """Sense the day: date, weekday, season, and a one-word weather mood."""
-    today = datetime.date.today()
-    month = today.month
+    """Sense the moment: date, weekday, season, time of day, and weather mood."""
+    # Lambda runs in UTC; shift to Ottawa (UTC-4) so time of day is local.
+    now = datetime.datetime.utcnow() - datetime.timedelta(hours=4)
+    month = now.month
     season = {12: "winter", 1: "winter", 2: "winter",
               3: "spring", 4: "spring", 5: "spring",
               6: "summer", 7: "summer", 8: "summer",
               9: "autumn", 10: "autumn", 11: "autumn"}[month]
+    hour = now.hour
+    time_of_day = ("night" if hour < 6 else "morning" if hour < 12
+                   else "afternoon" if hour < 18 else "evening")
     return {
-        "date": today.isoformat(),
-        "weekday": today.strftime("%A"),
+        "date": now.date().isoformat(),
+        "weekday": now.strftime("%A"),
         "season": season,
+        "time_of_day": time_of_day,
         "weather": _weather_mood(),
     }
 
@@ -51,10 +58,11 @@ def build_prompt(ctx: dict, used_words: list) -> str:
     used = ", ".join(used_words) if used_words else "(none yet)"
     return (
         f"Date: {ctx['date']} ({ctx['weekday']}, {ctx['season']}).\n"
-        f"Weather mood today: {ctx['weather']}.\n"
+        f"Time of day: {ctx['time_of_day']}.\n"
+        f"Weather right now: {ctx['weather']}.\n"
         f"Words already taught (do NOT reuse): {used}.\n\n"
-        "Choose today's word and return the JSON packet described in your "
-        "instructions."
+        "Choose today's word so its mood matches the weather and time of day, then "
+        "return the JSON packet described in your instructions."
     )
 
 
