@@ -13,11 +13,11 @@ Title and tag are exact per the challenge terms.
 
 ## Vision and what it does
 
-I read a lot, and I kept running into words I loved and then forgetting them a
-chapter later. Looking one up was never the problem. The problem was remembering
-to go find a new one, every day.
+I read a lot, so I run into great words all the time, and then I forget them. I
+don't really need a dictionary for that. I need something that just hands me a new
+word each day so I don't have to remember to go looking.
 
-So I built Daily Lexicon. It teaches me one word a day, and I never have to open
+So I built Daily Lexicon. It teaches me one word a day and I never have to open
 anything.
 
 Every morning it wakes up on its own, picks an uncommon word, and ties it loosely
