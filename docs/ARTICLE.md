@@ -3,8 +3,8 @@ FINAL ARTICLE - copy the content below into the AWS Builder Center editor.
 The live URL and repo link are already filled in. Before you publish:
   1. Upload docs/architecture.png where the diagram is referenced.
   2. Add a screenshot of your real page + email (swap the Petrichor sample for
-     your own first word, e.g. Sonder, if you like).
-Everything else is ready as-is. Title and tag are exact per the challenge terms.
+     your own first word if you like).
+Title and tag are exact per the challenge terms.
 -->
 
 **Title:** Weekend Creative Agent Challenge: Daily Lexicon
@@ -13,21 +13,20 @@ Everything else is ready as-is. Title and tag are exact per the challenge terms.
 
 ## Vision and what it does
 
-I read a lot, and I kept meeting words I loved and then forgetting them by the
-next chapter. The friction was never the looking-up, it was the remembering, and
-the small daily effort of going and finding a new one. So I built Daily Lexicon,
-an always-on agent that teaches me one new word every day without my ever opening
-an app.
+I read a lot, and I kept running into words I loved and then forgetting them a
+chapter later. Looking one up was never the problem. The problem was remembering
+to go find a new one, every day.
 
-Every morning, before I am awake, the agent wakes on its own, conjures a single
-uncommon and genuinely beautiful English word, and themes it to the date and to
-Ottawa's weather that day. It presents the word with its pronunciation,
-definition, etymology, an example sentence, and a tiny original poem that uses
-the word and echoes the mood of the day. By the time I have poured my coffee, the
-word is already waiting for me, both on a web page and in my inbox. The best tool
-is the one you never have to open, so this one opens itself.
+So I built Daily Lexicon. It teaches me one word a day, and I never have to open
+anything.
 
-Here is a real morning's output:
+Every morning it wakes up on its own, picks an uncommon word, and ties it loosely
+to the date and the weather here in Ottawa. I get the word, how to say it, what it
+means, where it came from, a sentence, and a little poem that actually uses it. By
+the time I've got coffee, it's already sitting on a page and in my inbox. That's
+the whole idea. The best tool is the one you never have to open.
+
+Here's a real one it made:
 
 > **Petrichor** /ˈpɛtrɪkɔːr/ · noun
 > The earthy scent produced when rain falls on dry soil.
@@ -44,32 +43,29 @@ Here is a real morning's output:
 
 ## How I built it
 
-The decision that makes this an agent rather than a cron job that calls a model
-once is memory. A daily word generator with no memory repeats itself and never
-grows. So before it creates anything, the Lambda reads every word it has already
-taught out of DynamoDB and hands the model that list with one instruction: never
-reuse these, and drift into new territory over time. That single feedback loop is
-what turns a random word picker into something that behaves like it is paying
-attention across days.
+The thing that makes this an agent and not just a cron job is that it remembers.
 
-The second decision was to make the agent feel like it knows what day it is. Each
-run pulls the date, the season, and Ottawa's current weather from a free API, so
-a warm rainy Saturday produces a different word and mood than a cold clear Monday.
-The weather is woven into the poem, not just stamped on top.
+A word-a-day script with no memory repeats itself fast, and it never gets more
+interesting. So before it picks anything, the Lambda pulls every word it has
+already used out of DynamoDB and tells the model: don't reuse these, go somewhere
+new. That one step is the difference between a random generator and something that
+feels like it is keeping track.
 
-I also kept the whole thing dependency-free. The Lambda uses only boto3, which is
-already in the runtime, and the Python standard library, so `sam build` never
-reaches for pip and the build is trivially reproducible.
+I also wanted it to notice what day it is. Each run grabs the date, the season,
+and Ottawa's current weather, so a rainy Saturday gets a different word and mood
+than a cold Monday. The weather actually shows up in the poem, not just as a label.
 
-The main challenge was getting reliable, renderable output out of the model. A
-page and an email need real structure, not prose, so I ask Bedrock to reply as
-strict JSON and then treat that reply as untrusted. The agent parses it, tolerates
-the model wrapping JSON in a code fence or a sentence, validates that every field
-the page depends on is present, and regenerates if anything is missing. Nothing
-half-formed ever reaches the page. That guard, plus adaptive retries on throttling
-and a once-a-day idempotency check so a retry never emails me twice, is most of
-what took this from "works on my machine" to something I would leave running
-unattended for months.
+I kept the Lambda dependency-free on purpose. Just boto3, which is already in the
+runtime, and the standard library. So `sam build` never has to touch pip and it
+builds the same every time.
+
+The part that took the most fiddling was getting output clean enough to render. A
+page and an email need real structure, not a paragraph of prose. So I ask Bedrock
+for JSON and then don't trust it. The code copes with the model wrapping JSON in a
+code block or a sentence, checks that every field is actually there, and asks again
+if something is missing. Nothing broken makes it to the page. Add retries for
+throttling and a check so a re-run never emails me twice, and it is something I am
+happy to leave running for months.
 
 ## AWS services used and architecture overview
 
@@ -77,47 +73,39 @@ unattended for months.
 
 | Service | Role |
 |---|---|
-| Amazon EventBridge | Daily schedule that wakes the agent, no server ever idles |
+| Amazon EventBridge | Daily schedule that wakes the agent, nothing idles |
 | AWS Lambda (Python 3.12) | The orchestrator: remember, sense, create, publish |
-| Amazon Bedrock (Nova Lite) | Chooses the word and writes the verse |
-| Amazon DynamoDB | The agent's memory, for non-repetition and evolution |
-| Amazon S3 | Hosts the static page waiting for me each morning |
-| Amazon SNS | Emails me the word wherever I am |
-| AWS SAM | Infrastructure as code for the whole stack |
+| Amazon Bedrock (Nova Lite) | Picks the word and writes the verse |
+| Amazon DynamoDB | The agent's memory, so it never repeats |
+| Amazon S3 | Hosts the page waiting for me each morning |
+| Amazon SNS | Emails me the word |
+| AWS SAM | Infrastructure as code for the whole thing |
 
-One Lambda is the entire orchestration layer. It reads its memory, senses the day,
-makes one Bedrock call, and produces two outputs, a web page and an email. Keeping
-it a single function instead of a Step Functions workflow was a deliberate
-weekend-scope decision. The sequence is linear enough that a state machine would
-have added ceremony without adding reliability.
+It is one Lambda doing everything: read the memory, check the day, one Bedrock
+call, then write a page and send an email. I kept it a single function instead of
+a Step Functions workflow because the steps run start to finish in a straight
+line. A state machine would have been ceremony, not reliability.
 
 ## What I learned
 
-Building this reframed what the word "agent" means to me. I went in expecting the
-interesting part to be the model call, and it was almost the opposite. Bedrock's
-Converse API made the generation itself nearly boring, in the best way, one clean
-call that I could swap between models without touching anything around it. The
-design surface that actually mattered was the memory loop. An agent that reads its
-own past output before it acts is a genuinely different system from one that does
-not, even though the difference in code is a few lines and one DynamoDB table. It
-is the difference between a thing that produces and a thing that develops.
+This changed how I think about the word "agent." I assumed the model call would be
+the interesting part. It wasn't. Bedrock's Converse API made that bit almost
+boring, which I mean as a compliment. The part that mattered was the memory. An
+agent that looks at what it did yesterday before it acts is just a different thing
+than one that doesn't, even if it is only a few lines of code and one table.
 
-The second lesson was that trusting a language model's output is the wrong default
-for anything that publishes on its own. Treating the reply as untrusted, parsing
-defensively, validating the fields, and regenerating on a bad response, is what
-lets an unattended agent run without quietly shipping something broken one morning
-while I am asleep.
+The other lesson: don't trust model output by default, especially for something
+that publishes on its own while you are asleep. Parse it, check it, regenerate if
+it is off. That is what makes "unattended" actually safe.
 
-And on a practical note, I came away convinced that small single-purpose agents
-should stay dependency-free when they can. Reaching for urllib instead of an
-external HTTP library cost me a little code polish and bought a build that is fast
-to iterate on and reproducible every time. For something meant to run untouched
-for months, that trade was worth it.
+And I am sold on keeping small agents dependency-free when I can. Using urllib
+instead of a nicer HTTP library cost me a little polish, but the build is dead
+simple and reproducible. For something meant to run untouched, I will take that
+trade.
 
 ## Link to app or repo
 
 - **Live page:** http://weekend-agent-sitebucket-okt65m9uniqf.s3-website-us-east-1.amazonaws.com
 - **Code:** https://github.com/coolchigi/AWS-Builder-s-Weekend-Challenge
 
-The repository includes the full SAM template, the source, a test suite, CI, and
-setup instructions.
+The repo has the full SAM template, the source, tests, CI, and setup notes.
