@@ -25,11 +25,10 @@ everything, so, why not.
 So I built Daily Lexicon. It teaches me one word a day and I never have to open
 anything.
 
-Every morning it wakes up on its own, picks an uncommon word, and ties it loosely
-to the date and the weather here in Ottawa. I get the word, how to say it, what it
-means, where it came from, a sentence, and a little poem that actually uses it. By
-the time I've got coffee, it's already sitting on a page and in my inbox. That's
-the whole idea. The best tool is the one you never have to open.
+Every morning it picks an uncommon word and ties it to the date and the weather
+here in Ottawa. I get the word, how to say it, what it means, where it came from, a
+sentence, and a little poem that uses it. By the time I've got coffee, it's already
+on a page and in my inbox.
 
 A few rules I wanted it to stick to:
 
