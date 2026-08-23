@@ -13,9 +13,14 @@ Title and tag are exact per the challenge terms.
 
 ## Vision and what it does
 
-I read a lot, so I run into great words all the time, and then I forget them. I
-don't really need a dictionary for that. I need something that just hands me a new
-word each day so I don't have to remember to go looking.
+I read a lot, and I'm usually in the middle of way too many books at once. I was
+reading *The Subtle Art of Not Giving a F\*ck*, then I started *The Myth of
+Normal*, and now I'm on *The Meaning of Marriage*. Lol I know, what a diverse
+taste I have. When I learn a new word I write it down in one of my many journals.
+Then I can't find that journal, so I buy another one.
+
+Honestly this isn't really a tech problem. But as devs we like throwing tech at
+everything, so, why not.
 
 So I built Daily Lexicon. It teaches me one word a day and I never have to open
 anything.
