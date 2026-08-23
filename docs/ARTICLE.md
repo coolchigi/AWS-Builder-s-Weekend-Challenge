@@ -31,6 +31,13 @@ means, where it came from, a sentence, and a little poem that actually uses it. 
 the time I've got coffee, it's already sitting on a page and in my inbox. That's
 the whole idea. The best tool is the one you never have to open.
 
+A few rules I wanted it to stick to:
+
+- **Automatic** — EventBridge runs it whether I remember or not.
+- **Never repeats** — it reads its own history first, so I never get the same word twice.
+- **Themed** — the date and the weather actually shape the pick, not just decorate it.
+- **Trustworthy** — if the model returns something malformed, it regenerates instead of publishing junk.
+
 Here's a real one it made:
 
 > **Petrichor** /ˈpɛtrɪkɔːr/ · noun
@@ -71,6 +78,18 @@ code block or a sentence, checks that every field is actually there, and asks ag
 if something is missing. Nothing broken makes it to the page. Add retries for
 throttling and a check so a re-run never emails me twice, and it is something I am
 happy to leave running for months.
+
+Honestly the agent was the easy part. What actually ate my weekend was deploying
+it without leaving keys lying around. I wanted a proper least-privilege setup: a
+scoped IAM user just for this stack, its key in aws-vault instead of a plaintext
+file, and no bare `default` profile that could quietly deploy to the wrong account.
+That last one bit me first, I deployed to the wrong account because a default
+profile grabbed whatever creds were sitting around. Once I fixed that, aws-vault
+threw a curveball: by default it wraps your key in a temporary session token, and
+those tokens can't create IAM roles without MFA. So CloudFormation kept failing on
+the Lambda's role with "security token invalid." The fix was `aws-vault exec
+--no-session`, which uses the key directly. Annoying, but I came out of it with a
+genuinely locked-down deploy path, which felt worth the detour.
 
 ## AWS services used and architecture overview
 
