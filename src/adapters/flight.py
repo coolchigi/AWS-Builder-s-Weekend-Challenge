@@ -34,7 +34,10 @@ class FlightTracker(Tracker):
 
     def __init__(self):
         route = os.environ.get("ROUTE", "YOW-LOS")
-        self.origin, self.destination = (route.split("-") + ["LOS"])[:2]
+        parts = route.split("-", 1)
+        if len(parts) != 2 or not all(p.strip() for p in parts):
+            raise ValueError(f"ROUTE must be 'ORIGIN-DESTINATION' (e.g. YOW-LOS), got: {route!r}")
+        self.origin, self.destination = parts[0].strip().upper(), parts[1].strip().upper()
         self.depart_date = os.environ.get("DEPART_DATE", "2026-12-15")
         self.return_date = os.environ.get("RETURN_DATE", "")  # "" = one-way
         self.adults = os.environ.get("ADULTS", "1")

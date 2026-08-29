@@ -74,6 +74,7 @@ Parameters:
 
 Conditions:
   HasEmail: !Not [!Equals [!Ref NotifyEmail, ""]]
+  IsFlight: !Equals [!Ref Adapter, "flight"]
 
 Globals:
   Function:
@@ -171,7 +172,11 @@ Resources:
         Tick:
           Type: Schedule
           Properties:
-            Schedule: !Ref Schedule
+            # Flight watches every 6 hours; other apps use the Schedule param
+            # (default: daily). The spaced rate() expression lives here in the
+            # template, never in samconfig parameter_overrides (which mangles
+            # values containing spaces).
+            Schedule: !If [IsFlight, "rate(6 hours)", !Ref Schedule]
             Description: !Sub "Wake the ${Adapter} agent."
 
 Outputs:
