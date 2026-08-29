@@ -1,12 +1,13 @@
 version = 0.1
 
-# One template, one config-env per app. Deploy an app with:
+# One template, one config-env per app. Deploy with no --parameter-overrides:
 #   sam build
 #   sam deploy --config-env word
 #   sam deploy --config-env flight
-# No --parameter-overrides needed: the alert email comes from the SSM parameter
-# /roost/notify-email, and the Duffel token from /roost/duffel-token. Create both
-# once (see README). Each config-env is its own isolated CloudFormation stack.
+# After deploy, on each stack (once): subscribe your email to the SNS topic, and
+# for Flight Watch set the DUFFEL_TOKEN env var on the Lambda for live fares.
+# Keeping those off the CLI avoids overriding (and wiping) these config values.
+# Each config-env is its own isolated CloudFormation stack.
 
 [default.global.parameters]
 resolve_s3 = true
@@ -28,8 +29,8 @@ parameter_overrides = [
 ]
 
 # --- Flight Watch: track one route's fare ---
-# Live fares come from Duffel via the /roost/duffel-token SSM SecureString.
-# If that parameter is absent, a mock fare feed runs so you can still demo.
+# Live fares come from Duffel via the DUFFEL_TOKEN env var, set on the function
+# after deploy. Without it, a mock fare feed runs so you can still demo.
 #   sam deploy --config-env flight
 [flight.deploy.parameters]
 stack_name = "roost-flight"

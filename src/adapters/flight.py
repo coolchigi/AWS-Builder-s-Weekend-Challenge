@@ -5,10 +5,10 @@ The second Roost app, and proof the platform holds: a completely different job
 the cheapest fare from a live source, remembers every observation, asks Bedrock
 for a one-line verdict, and emails you only on a new low or a meaningful drop.
 
-The fare source is pluggable. Today it uses Duffel, with the token read at runtime
-from an SSM SecureString; when no token is set it falls back to a mock fare feed so
-the app is always demoable. Losing a provider costs one function, not the app
-(Amadeus closed its free tier mid-build; the swap was a single file).
+The fare source is pluggable. Today it uses Duffel, with the token supplied as the
+DUFFEL_TOKEN env var on the function; when no token is set it falls back to a mock
+fare feed so the app is always demoable. Losing a provider costs one function, not
+the app (Amadeus closed its free tier mid-build; the swap was a single file).
 """
 
 import datetime
@@ -111,7 +111,7 @@ class FlightTracker(Tracker):
             body += f"Previous low seen: {_money(record['prev_min'], record['currency'])}\n"
         body += f"\n{record['advice']}\n\nPrice history: {url}\n"
         if record.get("source") == "mock":
-            body += "\n(mock fare feed, set the /roost/duffel-token SSM parameter for live prices)\n"
+            body += "\n(mock fare feed, set the DUFFEL_TOKEN env var on the function for live prices)\n"
         return subject, body
 
     def pages(self, record: dict, history: list) -> dict:
@@ -123,31 +123,13 @@ class FlightTracker(Tracker):
 
 # --- Duffel (live fares) ---------------------------------------------------
 
-_TOKEN_CACHE = {}
-
-
 def _duffel_token():
-    """The Duffel token: DUFFEL_TOKEN env (local/tests) or an SSM SecureString.
+    """Duffel token from the DUFFEL_TOKEN env var, or None to use the mock feed.
 
-    Reading it at runtime keeps the secret out of the template, the deploy
-    command, and the repo. Cached per warm Lambda so we hit SSM at most once.
+    Set it on the Lambda (Console -> Configuration -> Environment variables) so
+    the secret lives only on the function, never in the template, CLI, or repo.
     """
-    token = os.environ.get("DUFFEL_TOKEN")
-    if token:
-        return token
-    name = os.environ.get("DUFFEL_TOKEN_SSM")
-    if not name:
-        return None
-    if name in _TOKEN_CACHE:
-        return _TOKEN_CACHE[name]
-    try:
-        import boto3
-        value = boto3.client("ssm").get_parameter(
-            Name=name, WithDecryption=True)["Parameter"]["Value"]
-        _TOKEN_CACHE[name] = value
-        return value
-    except Exception:
-        return None
+    return os.environ.get("DUFFEL_TOKEN") or None
 
 
 def _duffel_cheapest(origin, destination, depart, ret, adults, currency, cabin):

@@ -60,22 +60,6 @@ An adapter implements six methods (`src/roost/tracker.py`): `collect`, `reason`,
 - (Flight Watch, optional) a **Duffel** access token for live fares. Without it
   the app runs on a mock fare feed, so it is still fully demoable.
 
-## One-time setup: SSM parameters
-
-Secrets and personal data live in SSM, never on the CLI or in this repo. Create
-them once (console, or with a profile that has `ssm:PutParameter`):
-
-```bash
-aws ssm put-parameter --name /roost/notify-email --type String \
-  --value you@example.com
-# Flight Watch only; skip for mock fares:
-aws ssm put-parameter --name /roost/duffel-token --type SecureString \
-  --value 'duffel_live_or_test_xxx'
-```
-
-The alert email is resolved at deploy from `/roost/notify-email`; the Duffel token
-is read and decrypted at runtime from `/roost/duffel-token`.
-
 ## Deploy an app
 
 ```bash
@@ -85,10 +69,28 @@ sam deploy --config-env flight
 sam deploy --config-env flight-abv   # a second route, its own stack
 ```
 
-No `--parameter-overrides` needed: everything non-default lives in
-`samconfig.toml`, and the email/token come from SSM. Confirm the SNS subscription
-email once per stack. Flight routes and dates are set per config-env in
-`samconfig.toml` (`Route`, `DepartDate`, `ReturnDate`, `Currency`).
+No `--parameter-overrides`: everything non-default lives in `samconfig.toml`.
+Passing overrides on the CLI would replace that whole list, so keep secrets and
+the email off the command line and set them on the resources instead (below).
+Routes and dates are per config-env in `samconfig.toml`.
+
+## After deploy, once per stack
+
+Two things live on the resources, not in the repo or the deploy command:
+
+```bash
+# 1. Get your alerts: subscribe your email to the topic, then confirm the email.
+aws sns subscribe --topic-arn <AlertTopic ARN> --protocol email \
+  --notification-endpoint you@example.com
+
+# 2. Flight Watch only: set the Duffel token on the function for live fares.
+#    (Console -> the function -> Configuration -> Environment variables -> add
+#    DUFFEL_TOKEN, or the CLI below. Without it the app runs on the mock feed.)
+```
+
+A future `sam deploy` of the same stack overwrites the function's env vars from
+the template, so re-set `DUFFEL_TOKEN` if you redeploy. For a deploy-once agent
+that never comes up.
 
 ## Run it right now (don't wait for the schedule)
 
@@ -136,7 +138,7 @@ CI runs both on every push (see `.github/workflows/ci.yml`).
   validated and regenerated before anything publishes. Flight Watch's verdict is
   best-effort and falls back to a computed message if Bedrock is unavailable.
 - **Least privilege:** the Bedrock permission is scoped to foundation models; the
-  Duffel token is an SSM SecureString read at runtime, not a template parameter.
+  Duffel token is a Lambda env var set on the function, not committed or in the template.
 - **Free-Tier aware:** Flight Watch at every 6h is ~120 Duffel calls/month. The
   fare source is pluggable, so a dead provider (Amadeus closed its free tier
   mid-build) costs one function, not the app.

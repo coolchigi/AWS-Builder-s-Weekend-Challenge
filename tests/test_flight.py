@@ -77,13 +77,11 @@ def test_spark_needs_two_points():
     assert "<svg" in flight._spark([1200, 1250, 1180])
 
 
-def test_duffel_token_prefers_env(monkeypatch):
+def test_duffel_token_from_env(monkeypatch):
     monkeypatch.setenv("DUFFEL_TOKEN", "envtoken")
-    monkeypatch.setenv("DUFFEL_TOKEN_SSM", "/roost/duffel-token")
     assert flight._duffel_token() == "envtoken"
 
 
-def test_duffel_token_none_without_config(monkeypatch):
+def test_duffel_token_none_when_unset(monkeypatch):
     monkeypatch.delenv("DUFFEL_TOKEN", raising=False)
-    monkeypatch.delenv("DUFFEL_TOKEN_SSM", raising=False)
     assert flight._duffel_token() is None
