@@ -24,6 +24,7 @@
       "Resource": [
         "arn:aws:cloudformation:us-east-1:337305803512:stack/weekend-agent/*",
         "arn:aws:cloudformation:us-east-1:337305803512:stack/weekend-agent-*/*",
+        "arn:aws:cloudformation:us-east-1:337305803512:stack/roost-*/*",
         "arn:aws:cloudformation:us-east-1:337305803512:stack/aws-sam-cli-managed-default/*",
         "arn:aws:cloudformation:us-east-1:aws:transform/Serverless-2016-10-31",
         "arn:aws:cloudformation:*:aws:transform/*"
@@ -71,7 +72,9 @@
       ],
       "Resource": [
         "arn:aws:s3:::weekend-agent-sitebucket-*",
-        "arn:aws:s3:::weekend-agent-sitebucket-*/*"
+        "arn:aws:s3:::weekend-agent-sitebucket-*/*",
+        "arn:aws:s3:::roost-*",
+        "arn:aws:s3:::roost-*/*"
       ]
     },
     {
@@ -91,7 +94,10 @@
         "lambda:ListTags",
         "lambda:TagResource"
       ],
-      "Resource": "arn:aws:lambda:us-east-1:337305803512:function:weekend-agent-*"
+      "Resource": [
+        "arn:aws:lambda:us-east-1:337305803512:function:weekend-agent-*",
+        "arn:aws:lambda:us-east-1:337305803512:function:roost-*"
+      ]
     },
     {
       "Sid": "DynamoDB",
@@ -104,7 +110,10 @@
         "dynamodb:TagResource",
         "dynamodb:ListTagsOfResource"
       ],
-      "Resource": "arn:aws:dynamodb:us-east-1:337305803512:table/weekend-agent-*"
+      "Resource": [
+        "arn:aws:dynamodb:us-east-1:337305803512:table/weekend-agent-*",
+        "arn:aws:dynamodb:us-east-1:337305803512:table/roost-*"
+      ]
     },
     {
       "Sid": "SNS",
@@ -121,7 +130,10 @@
         "sns:TagResource",
         "sns:ListTagsForResource"
       ],
-      "Resource": "arn:aws:sns:us-east-1:337305803512:weekend-agent-*"
+      "Resource": [
+        "arn:aws:sns:us-east-1:337305803512:weekend-agent-*",
+        "arn:aws:sns:us-east-1:337305803512:roost-*"
+      ]
     },
     {
       "Sid": "EventBridge",
@@ -134,7 +146,10 @@
         "events:RemoveTargets",
         "events:TagResource"
       ],
-      "Resource": "arn:aws:events:us-east-1:337305803512:rule/weekend-agent-*"
+      "Resource": [
+        "arn:aws:events:us-east-1:337305803512:rule/weekend-agent-*",
+        "arn:aws:events:us-east-1:337305803512:rule/roost-*"
+      ]
     },
     {
       "Sid": "IamForLambdaRole",
@@ -152,13 +167,19 @@
         "iam:ListRolePolicies",
         "iam:ListAttachedRolePolicies"
       ],
-      "Resource": "arn:aws:iam::337305803512:role/weekend-agent-*"
+      "Resource": [
+        "arn:aws:iam::337305803512:role/weekend-agent-*",
+        "arn:aws:iam::337305803512:role/roost-*"
+      ]
     },
     {
       "Sid": "IamPassRoleToLambda",
       "Effect": "Allow",
       "Action": "iam:PassRole",
-      "Resource": "arn:aws:iam::337305803512:role/weekend-agent-*",
+      "Resource": [
+        "arn:aws:iam::337305803512:role/weekend-agent-*",
+        "arn:aws:iam::337305803512:role/roost-*"
+      ],
       "Condition": {
         "StringEquals": { "iam:PassedToService": "lambda.amazonaws.com" }
       }
@@ -173,7 +194,10 @@
         "logs:TagLogGroup",
         "logs:PutRetentionPolicy"
       ],
-      "Resource": "arn:aws:logs:us-east-1:337305803512:log-group:/aws/lambda/weekend-agent-*"
+      "Resource": [
+        "arn:aws:logs:us-east-1:337305803512:log-group:/aws/lambda/weekend-agent-*",
+        "arn:aws:logs:us-east-1:337305803512:log-group:/aws/lambda/roost-*"
+      ]
     }
   ]
 }

@@ -1,10 +1,70 @@
 version = 0.1
 
-[default.deploy.parameters]
-stack_name = "weekend-agent"
+# One template, one config-env per app. Deploy an app with:
+#   sam build
+#   sam deploy --config-env word   --parameter-overrides NotifyEmail=you@example.com
+#   sam deploy --config-env flight --parameter-overrides NotifyEmail=you@example.com
+# Each config-env is its own isolated CloudFormation stack.
+
+[default.global.parameters]
 resolve_s3 = true
 region = "us-east-1"          # Nova models live in us-east-1
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = false
-# Fill NotifyEmail here, or pass it on the CLI with --parameter-overrides.
-# parameter_overrides = "NotifyEmail=you@example.com"
+
+# --- Daily Lexicon: one rare word a day ---
+[word.deploy.parameters]
+stack_name = "roost-word"
+resolve_s3 = true
+region = "us-east-1"
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = false
+parameter_overrides = [
+  "Adapter=word",
+  "Schedule=cron(0 13 * * ? *)",
+  "WeatherLatLon=45.42,-75.70",
+]
+
+# --- Flight Watch: track one route's fare ---
+# DuffelToken is optional; without it a mock fare feed runs so you can demo.
+# Pass the token on the CLI to avoid committing secrets:
+#   sam deploy --config-env flight --parameter-overrides \
+#     "NotifyEmail=you@example.com DuffelToken=duffel_live_or_test_xxx"
+[flight.deploy.parameters]
+stack_name = "roost-flight"
+resolve_s3 = true
+region = "us-east-1"
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = false
+parameter_overrides = [
+  "Adapter=flight",
+  "Schedule=rate(6 hours)",
+  "Route=YOW-LOS",
+  "DepartDate=2026-12-15",
+  "ReturnDate=2026-12-29",
+  "Currency=CAD",
+  "FlightDropPct=5",
+  "MockBase=1400",
+]
+
+# --- Flight Watch: Ottawa → Abuja (YOW-ABV) ---
+# A second isolated stack, same adapter, different route.
+# Deploy with:
+#   sam deploy --config-env flight-abv --parameter-overrides \
+#     "NotifyEmail=you@example.com DuffelToken=duffel_live_or_test_xxx"
+[flight-abv.deploy.parameters]
+stack_name = "roost-flight-abv"
+resolve_s3 = true
+region = "us-east-1"
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = false
+parameter_overrides = [
+  "Adapter=flight",
+  "Schedule=rate(6 hours)",
+  "Route=YOW-ABV",
+  "DepartDate=2026-12-15",
+  "ReturnDate=2026-12-29",
+  "Currency=CAD",
+  "FlightDropPct=5",
+  "MockBase=1600",
+]

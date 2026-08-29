@@ -1,25 +1,23 @@
-"""Lambda entry point for the Daily Lexicon creative agent.
+"""Lambda entry point. One handler runs every Roost app.
 
-Flow (scheduled, no human in the loop):
-    1. remember  -> load words already used (task memory in DynamoDB)
-    2. sense     -> today's date, season, and weather
-    3. guard     -> if today's word already exists, re-publish and stop (idempotent)
-    4. create    -> Bedrock conjures a validated word packet
-    5. keep      -> store the new word
-    6. publish   -> render today's page + archive to S3
-    7. deliver   -> email the word via SNS
+The lifecycle is fixed and app-agnostic:
+    1. remember  -> load this app's past records (DynamoDB)
+    2. sense     -> adapter.collect(): weather, a live price, ...
+    3. reason    -> adapter.reason(): turn context + memory into one record
+    4. keep      -> save it, unless the adapter says it's a duplicate
+    5. publish   -> adapter.pages() -> S3 site (always refreshed)
+    6. alert     -> email via SNS, only when the adapter says it's noteworthy
 
-Only task.py holds the creative concept. Swap it to re-skin the agent.
+Which app runs is chosen by the ADAPTER env var. Pass {"force": true} when
+invoking to save + email even if it would normally be skipped (handy for demos).
 """
 
 import json
 import logging
 import os
 
-from agent import analyze
-from notify import send_alert
-import store
-import task
+from adapters import load
+from roost import notify, store
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -27,42 +25,39 @@ logger.setLevel(logging.INFO)
 
 def handler(event, context):
     event = event or {}
+    adapter = load(os.environ["ADAPTER"])
     table = os.environ["TABLE_NAME"]
     bucket = os.environ["BUCKET_NAME"]
+    topic = os.environ["ALERT_TOPIC_ARN"]
 
-    history = store.recent_words(table, limit=60)
-    ctx = task.collect()
+    past = store.history(table, limit=90)
+    ctx = adapter.collect()
+    record = adapter.reason(ctx, past)
+    if record is None:
+        logger.info(json.dumps({"event": "noop", "adapter": adapter.slug}))
+        return {"status": "noop"}
+
+    force = bool(event.get("force"))
+    fresh = force or not adapter.is_duplicate(record, past)
+    noteworthy = adapter.is_noteworthy(record, past)  # compares against past only
+
+    if fresh:
+        store.save(table, record)
+
+    history = [record, *past] if fresh else past
+    url = store.publish(bucket, adapter.pages(record, history))
+
+    alerted = False
+    if fresh and (force or noteworthy):
+        subject, body = adapter.email(record, url)
+        notify.send_alert(topic, subject, body)
+        alerted = True
+
     logger.info(json.dumps({
-        "event": "start", "date": ctx["date"],
-        "known_words": len(history), "weather": ctx["weather"],
+        "event": "done", "adapter": adapter.slug, "id": record["id"],
+        "fresh": fresh, "alerted": alerted, "site": url,
     }))
-
-    # Idempotency: one word per day. Re-running just refreshes the page and
-    # exits, so a retry or a double-fire never emails you twice. Pass
-    # {"force": true} when invoking to override for testing.
-    existing = next((w for w in history if w.get("date") == ctx["date"]), None)
-    if existing and not event.get("force"):
-        today = {**existing, "word": existing.get("display_word", existing["word"])}
-        site_url = store.publish_site(bucket, today, history)
-        logger.info(json.dumps({"event": "skip_duplicate", "word": today["word"], "site": site_url}))
-        return {"status": "already_done", "word": today["word"], "site": site_url}
-
-    # Create today's word.
-    used = [w["word"] for w in history]
-    packet = analyze(
-        model_id=os.environ["MODEL_ID"],
-        system_prompt=task.SYSTEM_PROMPT,
-        user_prompt=task.build_prompt(ctx, used),
-    )
-    packet["date"] = ctx["date"]
-
-    store.save_word(table, packet)
-    site_url = store.publish_site(bucket, packet, [packet] + history)
-    send_alert(
-        topic_arn=os.environ["ALERT_TOPIC_ARN"],
-        subject=f"Today's word: {packet['word']}",
-        body=task.render_email(packet, site_url),
-    )
-
-    logger.info(json.dumps({"event": "published", "word": packet["word"], "site": site_url}))
-    return {"status": "published", "word": packet["word"], "site": site_url}
+    return {
+        "status": "published" if fresh else "refreshed",
+        "id": record["id"], "alerted": alerted, "site": url,
+    }

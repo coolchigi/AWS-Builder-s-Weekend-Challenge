@@ -1,27 +1,78 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  Daily Lexicon - an always-on creative agent. Each day EventBridge wakes a
-  Lambda that reasons with Amazon Bedrock (Nova) to conjure a new, uncommon word
-  themed to the day and weather, remembers past words in DynamoDB so it never
-  repeats, publishes a web page to S3, and emails you the word via SNS.
+  Roost - a platform for always-on agents. One core lifecycle (wake, sense,
+  reason, remember, publish, alert) deployed as an isolated stack per app. The
+  Adapter parameter chooses which app this stack runs (word, flight, ...). Each
+  stack owns its own Lambda, DynamoDB memory, and public S3 site.
 
 Parameters:
+  Adapter:
+    Type: String
+    Default: word
+    AllowedValues: [word, flight]
+    Description: >
+      Which app this stack runs. Add values as you add adapters. Multiple stacks
+      can share the same slug (e.g. two flight stacks for YOW-LOS and YOW-ABV)
+      — each stack is fully isolated with its own DynamoDB table, S3 bucket, and
+      SNS topic. Use different config-envs in samconfig.toml to deploy them.
   NotifyEmail:
     Type: String
-    Description: Email that receives the daily word (confirm the SNS subscription once).
+    Description: Email that receives this app's alerts (confirm the SNS subscription once).
   Schedule:
     Type: String
     Default: "cron(0 13 * * ? *)"
-    Description: When the agent creates. Default 13:00 UTC daily. e.g. "rate(1 day)".
+    Description: How often the agent wakes. word=daily, flight=rate(6 hours).
   ModelId:
     Type: String
     Default: "amazon.nova-lite-v1:0"
     Description: Bedrock model id. Nova Lite is cheap and Free-Tier-friendly.
+
+  # --- word app ---
   WeatherLatLon:
     Type: String
     Default: "45.42,-75.70"
-    Description: "lat,lon used to theme the word to today's weather (Open-Meteo, no key). Default: Ottawa."
+    Description: "lat,lon to theme the word to today's weather (Open-Meteo). Default Ottawa."
+
+  # --- flight app ---
+  Route:
+    Type: String
+    Default: "YOW-LOS"
+    Description: "Origin-Destination IATA codes, e.g. YOW-LOS."
+  DepartDate:
+    Type: String
+    Default: "2026-12-15"
+  ReturnDate:
+    Type: String
+    Default: ""
+    Description: "Empty for one-way."
+  Adults:
+    Type: String
+    Default: "1"
+  Currency:
+    Type: String
+    Default: "CAD"
+  FlightDropPct:
+    Type: String
+    Default: "5"
+    Description: "Email when the fare drops at least this percent from the last check."
+  DuffelToken:
+    Type: String
+    Default: ""
+    NoEcho: true
+    Description: "Duffel access token. Empty = mock fare feed (still fully demoable)."
+  CabinClass:
+    Type: String
+    Default: "economy"
+    AllowedValues: [economy, premium_economy, business, first]
+  MockBase:
+    Type: String
+    Default: ""
+    Description: >
+      Override the mock fare baseline (CAD). Empty = auto (1400 for YOW-LOS,
+      1600 for YOW-ABV, 1200 for everything else). Only used when Amadeus keys
+      are not set. Set per-stack in samconfig.toml so each route gets a
+      realistic starting price.
 
 Globals:
   Function:
@@ -30,21 +81,21 @@ Globals:
     Runtime: python3.12
 
 Resources:
-  WordMemory:
+  Memory:
     Type: AWS::DynamoDB::Table
     Properties:
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
-        - AttributeName: word
+        - AttributeName: id
           AttributeType: S
       KeySchema:
-        - AttributeName: word
+        - AttributeName: id
           KeyType: HASH
 
   SiteBucket:
     Type: AWS::S3::Bucket
     Properties:
-      # Public static website so you get a live URL to show in your submission.
+      # Public static website so each app has a live URL for its submission.
       PublicAccessBlockConfiguration:
         BlockPublicAcls: false
         BlockPublicPolicy: false
@@ -72,7 +123,7 @@ Resources:
   AlertTopic:
     Type: AWS::SNS::Topic
     Properties:
-      DisplayName: Daily Lexicon
+      DisplayName: !Sub "Roost ${Adapter}"
 
   AlertSubscription:
     Type: AWS::SNS::Subscription
@@ -88,11 +139,21 @@ Resources:
       Handler: app.handler
       Environment:
         Variables:
+          ADAPTER: !Ref Adapter
           MODEL_ID: !Ref ModelId
-          TABLE_NAME: !Ref WordMemory
+          TABLE_NAME: !Ref Memory
           BUCKET_NAME: !Ref SiteBucket
           ALERT_TOPIC_ARN: !Ref AlertTopic
           WEATHER_LATLON: !Ref WeatherLatLon
+          ROUTE: !Ref Route
+          DEPART_DATE: !Ref DepartDate
+          RETURN_DATE: !Ref ReturnDate
+          ADULTS: !Ref Adults
+          CURRENCY: !Ref Currency
+          FLIGHT_DROP_PCT: !Ref FlightDropPct
+          CABIN_CLASS: !Ref CabinClass
+          MOCK_BASE: !Ref MockBase
+          DUFFEL_TOKEN: !Ref DuffelToken
       Policies:
         - Statement:
             - Sid: InvokeBedrock
@@ -100,7 +161,7 @@ Resources:
               Action: bedrock:InvokeModel
               Resource: !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/*"
         - DynamoDBCrudPolicy:
-            TableName: !Ref WordMemory
+            TableName: !Ref Memory
         - S3CrudPolicy:
             BucketName: !Ref SiteBucket
         - SNSPublishMessagePolicy:
@@ -110,12 +171,15 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: !Ref Schedule
-            Description: Wake the agent daily to create a new word.
+            Description: !Sub "Wake the ${Adapter} agent."
 
 Outputs:
+  App:
+    Description: Which app this stack runs
+    Value: !Ref Adapter
   FunctionName:
-    Description: Lambda function name (invoke it manually to create today's word now)
+    Description: Lambda function name (invoke it manually to run once now)
     Value: !Ref AgentFunction
   SiteURL:
-    Description: Live web page for your daily word (put this in your submission)
+    Description: Live web page for this app (put this in your submission)
     Value: !GetAtt SiteBucket.WebsiteURL

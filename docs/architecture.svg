@@ -1,81 +1,155 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" font-family="'Helvetica Neue',Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1024" font-family="'Helvetica Neue', Arial, sans-serif">
   <defs>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
-      <path d="M0,0 L8,3 L0,6 Z" fill="#5a6270"/>
+    <marker id="ah" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8b93a6"/>
+    </marker>
+    <marker id="ahc" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2f6f7e"/>
     </marker>
     <style>
-      .box { rx: 12; stroke-width: 2; }
-      .svc { font-size: 15px; font-weight: 700; fill: #1a1f2b; }
-      .sub { font-size: 11.5px; fill: #5a6270; }
-      .edge { stroke: #5a6270; stroke-width: 2; fill: none; marker-end: url(#arrow); }
-      .elabel { font-size: 11px; fill: #5a6270; }
-      .title { font-size: 20px; font-weight: 800; fill: #1a1f2b; }
-      .kicker { font-size: 12px; font-weight: 700; fill: #9a5b2e; letter-spacing: 2px; }
+      .box{fill:#ffffff;stroke:#d8dce7;stroke-width:1.4}
+      .col-frame{fill:none;stroke:#cdd4e2;stroke-width:1.4}
+      .col-fill{fill:#f7f9fc}
+      .chip-app{fill:#fbf1e1;stroke:#bd6f16;stroke-width:1.4}
+      .spinepill{fill:#eef4f9;stroke:#2f6f7e;stroke-width:1.3}
+      .stripe-core{fill:#2f6f7e}
+      .t-h1{fill:#161a22;font-size:26px;font-weight:700}
+      .t-h2{fill:#5a6377;font-size:13px}
+      .t-name{fill:#161a22;font-size:18px;font-weight:700}
+      .t-title{fill:#161a22;font-family:'DejaVu Sans Mono',Menlo,monospace;font-weight:600;font-size:12.5px}
+      .t-sub{fill:#5a6377;font-family:'DejaVu Sans Mono',Menlo,monospace;font-size:10.5px}
+      .t-app{fill:#a9620f;font-family:'DejaVu Sans Mono',Menlo,monospace;font-weight:600;font-size:10.5px}
+      .t-spine{fill:#161a22;font-family:'DejaVu Sans Mono',Menlo,monospace;font-weight:500;font-size:11.5px}
+      .t-eyebrow{fill:#5a6377;font-family:'DejaVu Sans Mono',Menlo,monospace;font-weight:600;font-size:10.5px;letter-spacing:1.4px}
+      .t-purpose{fill:#5a6377;font-size:11.5px}
+      .t-arw{fill:#8b93a6;font-family:'DejaVu Sans Mono',Menlo,monospace;font-size:10px}
+      .t-chip{fill:#161a22;font-family:'DejaVu Sans Mono',Menlo,monospace;font-weight:600;font-size:12px}
+      .arw{stroke:#8b93a6;stroke-width:1.5;fill:none}
+      .arw-strong{stroke:#2f6f7e;stroke-width:1.8;fill:none}
+      .pill-txt{fill:#ffffff;font-family:'DejaVu Sans Mono',Menlo,monospace;font-weight:600;font-size:11px}
+      .legend{fill:#5a6377;font-size:12px}
     </style>
   </defs>
 
-  <rect x="0" y="0" width="960" height="520" fill="#ffffff"/>
-  <text x="40" y="46" class="kicker">DAILY LEXICON</text>
-  <text x="40" y="72" class="title">Always-on creative agent</text>
+  <rect x="0" y="0" width="1000" height="1024" fill="#ffffff"/>
 
-  <!-- EventBridge -->
-  <rect class="box" x="40" y="210" width="150" height="86" fill="#eef4ff" stroke="#4b7bec"/>
-  <text x="115" y="248" text-anchor="middle" class="svc">EventBridge</text>
-  <text x="115" y="268" text-anchor="middle" class="sub">daily schedule</text>
-  <text x="115" y="284" text-anchor="middle" class="sub">(no server idles)</text>
+  <!-- title -->
+  <text x="40" y="46" class="t-h1">Roost &#8212; one core, many always-on apps</text>
+  <text x="40" y="70" class="t-h2">The wake &#8594; sense &#8594; reason &#8594; remember &#8594; publish &#8594; alert loop is written once. An app is one adapter file, deployed as its own stack.</text>
 
-  <!-- Lambda (center) -->
-  <rect class="box" x="330" y="196" width="180" height="114" fill="#fff1e6" stroke="#f0932b"/>
-  <text x="420" y="240" text-anchor="middle" class="svc">AWS Lambda</text>
-  <text x="420" y="262" text-anchor="middle" class="sub">remember · sense</text>
-  <text x="420" y="278" text-anchor="middle" class="sub">create · publish</text>
-  <text x="420" y="294" text-anchor="middle" class="sub">Python 3.12</text>
+  <g transform="translate(0,82)">
+    <!-- PLATFORM CORE strip -->
+    <rect x="40" y="24" width="920" height="140" rx="14" class="box"/>
+    <text x="62" y="52" class="t-eyebrow">PLATFORM CORE &#8212; WRITTEN ONCE, REUSED BY EVERY APP</text>
+    <rect x="60"  y="70" width="118" height="34" rx="8" class="spinepill"/><text x="119" y="92" text-anchor="middle" class="t-spine">wake</text>
+    <rect x="208" y="70" width="118" height="34" rx="8" class="spinepill"/><text x="267" y="92" text-anchor="middle" class="t-spine">sense</text>
+    <rect x="356" y="70" width="118" height="34" rx="8" class="spinepill"/><text x="415" y="92" text-anchor="middle" class="t-spine">reason</text>
+    <rect x="504" y="70" width="128" height="34" rx="8" class="spinepill"/><text x="568" y="92" text-anchor="middle" class="t-spine">remember</text>
+    <rect x="662" y="70" width="118" height="34" rx="8" class="spinepill"/><text x="721" y="92" text-anchor="middle" class="t-spine">publish</text>
+    <rect x="810" y="70" width="118" height="34" rx="8" class="spinepill"/><text x="869" y="92" text-anchor="middle" class="t-spine">alert</text>
+    <line x1="178" y1="87" x2="208" y2="87" class="arw" marker-end="url(#ah)"/>
+    <line x1="326" y1="87" x2="356" y2="87" class="arw" marker-end="url(#ah)"/>
+    <line x1="474" y1="87" x2="504" y2="87" class="arw" marker-end="url(#ah)"/>
+    <line x1="632" y1="87" x2="662" y2="87" class="arw" marker-end="url(#ah)"/>
+    <line x1="780" y1="87" x2="810" y2="87" class="arw" marker-end="url(#ah)"/>
+    <text x="62" y="140" class="t-sub">core lib: agent.reason() &#183; store.remember() &#183; site.publish() &#183; notify.alert()   +   template.yaml   +   Tracker (the port)</text>
 
-  <!-- Bedrock (top) -->
-  <rect class="box" x="330" y="60" width="180" height="86" fill="#f0eaff" stroke="#8854d0"/>
-  <text x="420" y="98" text-anchor="middle" class="svc">Bedrock · Nova</text>
-  <text x="420" y="118" text-anchor="middle" class="sub">choose the word,</text>
-  <text x="420" y="134" text-anchor="middle" class="sub">write the verse</text>
+    <!-- adapter chips -->
+    <rect x="155" y="188" width="200" height="52" rx="10" class="chip-app"/>
+    <text x="255" y="210" text-anchor="middle" class="t-chip">adapters/word.py</text>
+    <text x="255" y="228" text-anchor="middle" class="t-app">the only file you write</text>
+    <rect x="645" y="188" width="200" height="52" rx="10" class="chip-app"/>
+    <text x="745" y="210" text-anchor="middle" class="t-chip">adapters/flight.py</text>
+    <text x="745" y="228" text-anchor="middle" class="t-app">the only file you write</text>
 
-  <!-- DynamoDB (bottom) -->
-  <rect class="box" x="330" y="374" width="180" height="86" fill="#e6f7f1" stroke="#20bf6b"/>
-  <text x="420" y="412" text-anchor="middle" class="svc">DynamoDB</text>
-  <text x="420" y="432" text-anchor="middle" class="sub">memory: never repeat,</text>
-  <text x="420" y="448" text-anchor="middle" class="sub">evolve over time</text>
+    <line x1="255" y1="188" x2="255" y2="166" class="arw" marker-end="url(#ah)"/>
+    <text x="266" y="180" class="t-arw">Tracker port</text>
+    <line x1="745" y1="188" x2="745" y2="166" class="arw" marker-end="url(#ah)"/>
+    <text x="756" y="180" class="t-arw">Tracker port</text>
 
-  <!-- S3 (right top) -->
-  <rect class="box" x="670" y="150" width="180" height="86" fill="#e6f7f1" stroke="#20bf6b"/>
-  <text x="760" y="188" text-anchor="middle" class="svc">Amazon S3</text>
-  <text x="760" y="208" text-anchor="middle" class="sub">the page waiting</text>
-  <text x="760" y="224" text-anchor="middle" class="sub">for you</text>
+    <line x1="255" y1="240" x2="255" y2="272" class="arw-strong" marker-end="url(#ahc)"/>
+    <text x="266" y="262" class="t-arw">sam deploy &#183; config-env word</text>
+    <line x1="745" y1="240" x2="745" y2="272" class="arw-strong" marker-end="url(#ahc)"/>
+    <text x="756" y="262" class="t-arw">sam deploy &#183; config-env flight</text>
 
-  <!-- SNS (right bottom) -->
-  <rect class="box" x="670" y="270" width="180" height="86" fill="#fdeef0" stroke="#eb3b5a"/>
-  <text x="760" y="308" text-anchor="middle" class="svc">Amazon SNS</text>
-  <text x="760" y="328" text-anchor="middle" class="sub">emails you</text>
-  <text x="760" y="344" text-anchor="middle" class="sub">the word</text>
+    <!-- STACK A: Daily Lexicon -->
+    <rect x="40" y="274" width="430" height="586" rx="16" class="col-fill"/>
+    <rect x="40" y="274" width="430" height="586" rx="16" class="col-frame"/>
+    <text x="62" y="306" class="t-name">Daily Lexicon</text>
+    <rect x="350" y="290" width="100" height="24" rx="12" fill="#2c8a58"/>
+    <text x="400" y="307" text-anchor="middle" class="pill-txt">LIVE</text>
+    <text x="62" y="328" class="t-purpose">teaches one rare word a day</text>
 
-  <!-- edges -->
-  <path class="edge" d="M190,253 L326,253"/>
-  <text x="258" y="245" text-anchor="middle" class="elabel">wakes</text>
+    <rect x="46" y="430" width="96" height="42" rx="9" class="chip-app"/>
+    <text x="94" y="450" text-anchor="middle" class="t-title" font-size="11px">Open-Meteo</text>
+    <text x="94" y="465" text-anchor="middle" class="t-sub">weather</text>
+    <line x1="142" y1="451" x2="150" y2="451" class="arw" marker-end="url(#ah)"/>
 
-  <path class="edge" d="M420,196 L420,150"/>
-  <path class="edge" d="M452,150 L452,192" stroke="#8854d0"/>
-  <text x="500" y="176" class="elabel">reason</text>
+    <rect x="150" y="344" width="210" height="46" rx="9" class="box"/><rect x="150" y="344" width="5" height="46" rx="2.5" class="stripe-core"/>
+    <text x="166" y="366" class="t-title">Amazon EventBridge</text><text x="166" y="382" class="t-app">daily &#183; cron(0 13 * * ?)</text>
+    <rect x="150" y="428" width="210" height="46" rx="9" class="box"/><rect x="150" y="428" width="5" height="46" rx="2.5" class="stripe-core"/>
+    <text x="166" y="450" class="t-title">AWS Lambda &#183; core</text><text x="166" y="466" class="t-app">runs word.py</text>
+    <rect x="150" y="504" width="210" height="46" rx="9" class="box"/><rect x="150" y="504" width="5" height="46" rx="2.5" class="stripe-core"/>
+    <text x="166" y="526" class="t-title">Amazon Bedrock</text><text x="166" y="542" class="t-sub">Nova &#183; reason()</text>
+    <rect x="150" y="574" width="210" height="46" rx="9" class="box"/><rect x="150" y="574" width="5" height="46" rx="2.5" class="stripe-core"/>
+    <text x="166" y="596" class="t-title">Amazon DynamoDB</text><text x="166" y="612" class="t-sub">memory &#183; remember()</text>
+    <rect x="150" y="644" width="210" height="46" rx="9" class="box"/><rect x="150" y="644" width="5" height="46" rx="2.5" class="stripe-core"/>
+    <text x="166" y="666" class="t-title">Amazon S3 site</text><text x="166" y="682" class="t-sub">publish()</text>
+    <rect x="150" y="714" width="210" height="46" rx="9" class="box"/><rect x="150" y="714" width="5" height="46" rx="2.5" class="stripe-core"/>
+    <text x="166" y="736" class="t-title">Amazon SNS &#8594; inbox</text><text x="166" y="752" class="t-app">emails every new word</text>
 
-  <path class="edge" d="M405,310 L405,370"/>
-  <path class="edge" d="M435,370 L435,314" stroke="#20bf6b"/>
-  <text x="470" y="346" class="elabel">read + write</text>
+    <line x1="255" y1="390" x2="255" y2="428" class="arw" marker-end="url(#ah)"/>
+    <line x1="255" y1="474" x2="255" y2="504" class="arw" marker-end="url(#ah)"/>
+    <line x1="255" y1="550" x2="255" y2="574" class="arw" marker-end="url(#ah)"/>
+    <line x1="255" y1="620" x2="255" y2="644" class="arw" marker-end="url(#ah)"/>
+    <line x1="255" y1="690" x2="255" y2="714" class="arw" marker-end="url(#ah)"/>
+    <rect x="196" y="792" width="118" height="34" rx="17" class="box"/>
+    <text x="255" y="814" text-anchor="middle" class="t-sub">your inbox</text>
+    <line x1="255" y1="760" x2="255" y2="792" class="arw" marker-end="url(#ah)"/>
 
-  <path class="edge" d="M510,240 L666,193"/>
-  <text x="590" y="205" text-anchor="middle" class="elabel">publish</text>
+    <!-- STACK B: Flight Watch -->
+    <rect x="530" y="274" width="430" height="586" rx="16" class="col-fill"/>
+    <rect x="530" y="274" width="430" height="586" rx="16" class="col-frame"/>
+    <text x="552" y="306" class="t-name">Flight Watch</text>
+    <rect x="850" y="290" width="90" height="24" rx="12" fill="#bd6f16"/>
+    <text x="895" y="307" text-anchor="middle" class="pill-txt">NEW</text>
+    <text x="552" y="328" class="t-purpose">watches YOW &#8594; LOS fares</text>
 
-  <path class="edge" d="M510,285 L666,308"/>
-  <text x="590" y="312" text-anchor="middle" class="elabel">deliver</text>
+    <rect x="536" y="430" width="96" height="42" rx="9" class="chip-app"/>
+    <text x="584" y="450" text-anchor="middle" class="t-title" font-size="11px">Amadeus API</text>
+    <text x="584" y="465" text-anchor="middle" class="t-sub">live fares</text>
+    <line x1="632" y1="451" x2="640" y2="451" class="arw" marker-end="url(#ah)"/>
 
-  <!-- reader -->
-  <circle cx="905" cy="193" r="7" fill="#5a6270"/>
-  <circle cx="905" cy="313" r="7" fill="#5a6270"/>
-  <path class="edge" d="M850,193 L890,193"/>
-  <path class="edge" d="M850,313 L890,313"/>
+    <rect x="640" y="344" width="210" height="46" rx="9" class="box"/><rect x="640" y="344" width="5" height="46" rx="2.5" class="stripe-core"/>
+    <text x="656" y="366" class="t-title">Amazon EventBridge</text><text x="656" y="382" class="t-app">every 6 hours</text>
+    <rect x="640" y="428" width="210" height="46" rx="9" class="box"/><rect x="640" y="428" width="5" height="46" rx="2.5" class="stripe-core"/>
+    <text x="656" y="450" class="t-title">AWS Lambda &#183; core</text><text x="656" y="466" class="t-app">runs flight.py</text>
+    <rect x="640" y="504" width="210" height="46" rx="9" class="box"/><rect x="640" y="504" width="5" height="46" rx="2.5" class="stripe-core"/>
+    <text x="656" y="526" class="t-title">Amazon Bedrock</text><text x="656" y="542" class="t-sub">Nova &#183; reason()</text>
+    <rect x="640" y="574" width="210" height="46" rx="9" class="box"/><rect x="640" y="574" width="5" height="46" rx="2.5" class="stripe-core"/>
+    <text x="656" y="596" class="t-title">Amazon DynamoDB</text><text x="656" y="612" class="t-sub">memory &#183; remember()</text>
+    <rect x="640" y="644" width="210" height="46" rx="9" class="box"/><rect x="640" y="644" width="5" height="46" rx="2.5" class="stripe-core"/>
+    <text x="656" y="666" class="t-title">Amazon S3 site</text><text x="656" y="682" class="t-sub">publish()</text>
+    <rect x="640" y="714" width="210" height="46" rx="9" class="box"/><rect x="640" y="714" width="5" height="46" rx="2.5" class="stripe-core"/>
+    <text x="656" y="736" class="t-title">Amazon SNS &#8594; inbox</text><text x="656" y="752" class="t-app">emails only on a price drop</text>
+
+    <line x1="745" y1="390" x2="745" y2="428" class="arw" marker-end="url(#ah)"/>
+    <line x1="745" y1="474" x2="745" y2="504" class="arw" marker-end="url(#ah)"/>
+    <line x1="745" y1="550" x2="745" y2="574" class="arw" marker-end="url(#ah)"/>
+    <line x1="745" y1="620" x2="745" y2="644" class="arw" marker-end="url(#ah)"/>
+    <line x1="745" y1="690" x2="745" y2="714" class="arw" marker-end="url(#ah)"/>
+    <rect x="686" y="792" width="118" height="34" rx="17" class="box"/>
+    <text x="745" y="814" text-anchor="middle" class="t-sub">your inbox</text>
+    <line x1="745" y1="760" x2="745" y2="792" class="arw" marker-end="url(#ah)"/>
+  </g>
+
+  <!-- legend -->
+  <g transform="translate(0,978)">
+    <rect x="40" y="0" width="15" height="15" rx="4" fill="#ffffff" stroke="#2f6f7e" stroke-width="1.5"/>
+    <text x="63" y="12" class="legend">AWS service the platform wires up (identical in every app)</text>
+    <rect x="470" y="0" width="15" height="15" rx="4" fill="#fbf1e1" stroke="#bd6f16" stroke-width="1.5"/>
+    <text x="493" y="12" class="legend">the per-app choice (all you write)</text>
+    <rect x="790" y="0" width="15" height="15" rx="4" fill="#2c8a58"/>
+    <text x="813" y="12" class="legend">deployed &amp; live</text>
+  </g>
 </svg>

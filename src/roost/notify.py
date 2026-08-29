@@ -1,7 +1,7 @@
-"""Send the agent's alert. SNS email keeps the scaffold Free-Tier simple.
+"""Send an app's alert. SNS email keeps the platform Free-Tier simple.
 
-Swap this for Slack/Discord/SES per challenge if you want a nicer demo, the
-handler only calls send_alert().
+Swap this for Slack/Discord/SES per app if you want a nicer channel; app.py only
+calls send_alert().
 """
 
 import boto3

@@ -1,6 +1,8 @@
 import pytest
 
-import agent
+from roost import agent
+
+KEYS = ("word", "poem")
 
 
 def test_parse_plain_json():
@@ -22,23 +24,15 @@ def test_parse_json_rejects_garbage():
         agent._parse_json("no json here at all")
 
 
-def _full_packet():
-    return {k: "x" for k in agent.REQUIRED_KEYS}
-
-
 def test_validate_accepts_complete_packet():
-    agent._validate(_full_packet())  # no raise
+    agent._validate({"word": "x", "poem": "y"}, KEYS)  # no raise
 
 
 def test_validate_rejects_missing_key():
-    packet = _full_packet()
-    del packet["poem"]
     with pytest.raises(ValueError):
-        agent._validate(packet)
+        agent._validate({"word": "x"}, KEYS)
 
 
 def test_validate_rejects_blank_value():
-    packet = _full_packet()
-    packet["definition"] = "   "
     with pytest.raises(ValueError):
-        agent._validate(packet)
+        agent._validate({"word": "x", "poem": "   "}, KEYS)
