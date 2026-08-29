@@ -200,13 +200,27 @@
       ]
     },
     {
-      "Sid": "ReadRoostSsmAtDeploy",
+      "Sid": "ManageRoostSsm",
       "Effect": "Allow",
       "Action": [
         "ssm:GetParameter",
-        "ssm:GetParameters"
+        "ssm:GetParameters",
+        "ssm:PutParameter",
+        "ssm:DeleteParameter"
       ],
       "Resource": "arn:aws:ssm:us-east-1:337305803512:parameter/roost/*"
+    },
+    {
+      "Sid": "RoostSsmKms",
+      "Effect": "Allow",
+      "Action": [
+        "kms:Encrypt",
+        "kms:Decrypt"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": { "kms:ViaService": "ssm.us-east-1.amazonaws.com" }
+      }
     }
   ]
 }
