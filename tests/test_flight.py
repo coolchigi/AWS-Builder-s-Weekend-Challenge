@@ -75,3 +75,15 @@ def test_page_renders_price_and_history():
 def test_spark_needs_two_points():
     assert flight._spark([1200]) == ""
     assert "<svg" in flight._spark([1200, 1250, 1180])
+
+
+def test_duffel_token_prefers_env(monkeypatch):
+    monkeypatch.setenv("DUFFEL_TOKEN", "envtoken")
+    monkeypatch.setenv("DUFFEL_TOKEN_SSM", "/roost/duffel-token")
+    assert flight._duffel_token() == "envtoken"
+
+
+def test_duffel_token_none_without_config(monkeypatch):
+    monkeypatch.delenv("DUFFEL_TOKEN", raising=False)
+    monkeypatch.delenv("DUFFEL_TOKEN_SSM", raising=False)
+    assert flight._duffel_token() is None

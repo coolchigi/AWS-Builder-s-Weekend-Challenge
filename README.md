@@ -33,7 +33,7 @@ worth sending.
         |                                                    |
    stack: roost-word                                 stack: roost-flight
    EventBridge (daily)                               EventBridge (rate 6h)
-   Lambda -> Bedrock Nova                            Lambda -> Amadeus + Bedrock
+   Lambda -> Bedrock Nova                            Lambda -> Duffel + Bedrock
           -> DynamoDB (memory)                              -> DynamoDB (memory)
           -> S3 site                                        -> S3 site
           -> SNS email (every word)                         -> SNS email (on a drop)
@@ -57,27 +57,38 @@ An adapter implements six methods (`src/roost/tracker.py`): `collect`, `reason`,
 - AWS account with **Bedrock model access enabled** for Amazon Nova in
   `us-east-1` (Bedrock console -> Model access -> enable Nova Lite).
 - AWS SAM CLI + configured credentials.
-- (Flight Watch, optional) a free **Amadeus Self-Service** key/secret. Without
-  it the app runs on a mock fare feed, so it is still fully demoable.
+- (Flight Watch, optional) a **Duffel** access token for live fares. Without it
+  the app runs on a mock fare feed, so it is still fully demoable.
+
+## One-time setup: SSM parameters
+
+Secrets and personal data live in SSM, never on the CLI or in this repo. Create
+them once (console, or with a profile that has `ssm:PutParameter`):
+
+```bash
+aws ssm put-parameter --name /roost/notify-email --type String \
+  --value you@example.com
+# Flight Watch only; skip for mock fares:
+aws ssm put-parameter --name /roost/duffel-token --type SecureString \
+  --value 'duffel_live_or_test_xxx'
+```
+
+The alert email is resolved at deploy from `/roost/notify-email`; the Duffel token
+is read and decrypted at runtime from `/roost/duffel-token`.
 
 ## Deploy an app
 
 ```bash
 sam build
-
-# Daily Lexicon
-sam deploy --config-env word --parameter-overrides NotifyEmail=you@example.com
-
-# Flight Watch (mock fares)
-sam deploy --config-env flight --parameter-overrides NotifyEmail=you@example.com
-
-# Flight Watch (live fares)
-sam deploy --config-env flight --parameter-overrides \
-  "NotifyEmail=you@example.com AmadeusClientId=xxx AmadeusClientSecret=yyy"
+sam deploy --config-env word
+sam deploy --config-env flight
+sam deploy --config-env flight-abv   # a second route, its own stack
 ```
 
-Confirm the SNS subscription email once per stack. Flight Watch defaults to
-YOW -> LOS in December; override `Route`, `DepartDate`, `ReturnDate`, `Currency`.
+No `--parameter-overrides` needed: everything non-default lives in
+`samconfig.toml`, and the email/token come from SSM. Confirm the SNS subscription
+email once per stack. Flight routes and dates are set per config-env in
+`samconfig.toml` (`Route`, `DepartDate`, `ReturnDate`, `Currency`).
 
 ## Run it right now (don't wait for the schedule)
 
@@ -124,8 +135,9 @@ CI runs both on every push (see `.github/workflows/ci.yml`).
 - **Resilient:** Bedrock calls use adaptive retries; malformed model output is
   validated and regenerated before anything publishes. Flight Watch's verdict is
   best-effort and falls back to a computed message if Bedrock is unavailable.
-- **Least privilege:** the Bedrock permission is scoped to foundation models.
-- **Free-Tier aware:** Flight Watch at every 6h is ~120 Amadeus calls/month,
-  well inside the free 2,000. Secrets are template parameters for the weekend;
-  move them to Secrets Manager for anything longer-lived.
+- **Least privilege:** the Bedrock permission is scoped to foundation models; the
+  Duffel token is an SSM SecureString read at runtime, not a template parameter.
+- **Free-Tier aware:** Flight Watch at every 6h is ~120 Duffel calls/month. The
+  fare source is pluggable, so a dead provider (Amadeus closed its free tier
+  mid-build) costs one function, not the app.
 - **Observable:** structured JSON logs to CloudWatch on every run.

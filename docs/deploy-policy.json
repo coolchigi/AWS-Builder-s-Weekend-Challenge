@@ -198,6 +198,15 @@
         "arn:aws:logs:us-east-1:337305803512:log-group:/aws/lambda/weekend-agent-*",
         "arn:aws:logs:us-east-1:337305803512:log-group:/aws/lambda/roost-*"
       ]
+    },
+    {
+      "Sid": "ReadRoostSsmAtDeploy",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetParameter",
+        "ssm:GetParameters"
+      ],
+      "Resource": "arn:aws:ssm:us-east-1:337305803512:parameter/roost/*"
     }
   ]
 }

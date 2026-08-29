@@ -17,8 +17,11 @@ Parameters:
       — each stack is fully isolated with its own DynamoDB table, S3 bucket, and
       SNS topic. Use different config-envs in samconfig.toml to deploy them.
   NotifyEmail:
-    Type: String
-    Description: Email that receives this app's alerts (confirm the SNS subscription once).
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /roost/notify-email
+    Description: >
+      SSM parameter name holding the alert email. CloudFormation resolves it to
+      the value at deploy, so the email never sits in this repo or on the CLI.
   Schedule:
     Type: String
     Default: "cron(0 13 * * ? *)"
@@ -56,11 +59,13 @@ Parameters:
     Type: String
     Default: "5"
     Description: "Email when the fare drops at least this percent from the last check."
-  DuffelToken:
+  DuffelTokenSsm:
     Type: String
-    Default: ""
-    NoEcho: true
-    Description: "Duffel access token. Empty = mock fare feed (still fully demoable)."
+    Default: "/roost/duffel-token"
+    Description: >
+      SSM SecureString parameter NAME holding the Duffel token. The Lambda reads
+      and decrypts it at runtime, so the secret never touches the template, the
+      CLI, or this repo. If the parameter is absent, the app runs on the mock feed.
   CabinClass:
     Type: String
     Default: "economy"
@@ -153,13 +158,24 @@ Resources:
           FLIGHT_DROP_PCT: !Ref FlightDropPct
           CABIN_CLASS: !Ref CabinClass
           MOCK_BASE: !Ref MockBase
-          DUFFEL_TOKEN: !Ref DuffelToken
+          DUFFEL_TOKEN_SSM: !Ref DuffelTokenSsm
       Policies:
         - Statement:
             - Sid: InvokeBedrock
               Effect: Allow
               Action: bedrock:InvokeModel
               Resource: !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/*"
+            - Sid: ReadDuffelToken
+              Effect: Allow
+              Action: ssm:GetParameter
+              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/roost/*"
+            - Sid: DecryptSecureString
+              Effect: Allow
+              Action: kms:Decrypt
+              Resource: "*"
+              Condition:
+                StringEquals:
+                  kms:ViaService: !Sub "ssm.${AWS::Region}.amazonaws.com"
         - DynamoDBCrudPolicy:
             TableName: !Ref Memory
         - S3CrudPolicy:
