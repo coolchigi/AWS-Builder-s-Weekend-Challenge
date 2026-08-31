@@ -121,18 +121,25 @@ never emailed.
 Then the data source died under me. I first built Flight Watch on the Amadeus flight
 API, and partway through the build Amadeus closed its free developer tier. That would
 have sunk the app if the fare source had been wired straight into the logic. It
-wasn't. `collect` reads a price from a fare source, and the source sits behind a swap
-point:
+wasn't. `collect` just asks for a price, and the source sits behind a swap point,
+tried in order:
 
 ```python
 def collect(self):
-    # live fare if a token is set, otherwise a mock feed so it always demos
-    return _duffel_cheapest(self.origin, self.destination, ...) or _mock_fare(...)
+    return (_serpapi_cheapest(...)     # Google Flights: price + Google's own read
+            or _duffel_cheapest(...)   # fallback provider
+            or _mock_fare(...))        # always demoable, no keys
 ```
 
-So losing Amadeus cost me that one function, not the app. It runs on Duffel now, and
-if Duffel dies too, the next provider is another single file. A source disappearing
-mid-build made the case for building it this way better than I could have on my own.
+So losing Amadeus cost me that one function, not the app. It runs on Google Flights
+now (through a search API), with Duffel and a mock feed behind it. If any of them
+dies, the next is one more single file.
+
+Google Flights turned out to be more than a replacement. It returns Google's own read
+on the fare, a `price_level` of low, typical, or high, and a typical price range. So
+instead of only knowing "cheaper than *I've* seen," the agent can say "this is a low
+fare, below the typical range" on its very first run, and that read is what it hands
+to the model for the Buy/Wait call. Judgment from day one, not after weeks of data.
 
 I kept the same habits from last month. The big one: ask Bedrock for JSON, then don't
 trust it. Parse it (tolerating a model that wraps JSON in prose or a code fence),
