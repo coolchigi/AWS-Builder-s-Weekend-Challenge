@@ -264,7 +264,7 @@ to earn each one.
 ## Link to app or repo
 
 - **Daily Lexicon (live):** http://roost-word-sitebucket-pmgueatufzxf.s3-website-us-east-1.amazonaws.com
-- **Flight Watch (live):** _<paste roost-flight SiteURL after you deploy it>_
+- **Flight Watch (live):** http://roost-flight-sitebucket-xuummxvihdrq.s3-website-us-east-1.amazonaws.com
 - **Code:** https://github.com/coolchigi/AWS-Builder-s-Weekend-Challenge
 
 The repo has the Roost core, both adapters, the single SAM template, tests, and CI.

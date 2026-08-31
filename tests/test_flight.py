@@ -77,6 +77,39 @@ def test_spark_needs_two_points():
     assert "<svg" in flight._spark([1200, 1250, 1180])
 
 
+def test_serpapi_none_without_key(monkeypatch):
+    monkeypatch.delenv("SERPAPI_KEY", raising=False)
+    assert flight._serpapi_cheapest("YOW", "LOS", "2026-12-15", "", "CAD", "economy") is None
+
+
+def test_serpapi_parses_price_insights(monkeypatch):
+    monkeypatch.setenv("SERPAPI_KEY", "k")
+    fake = {
+        "price_insights": {"lowest_price": 812, "price_level": "low",
+                           "typical_price_range": [900, 1600]},
+        "best_flights": [{"price": 812, "flights": [{"airline": "Air Canada"}],
+                          "layovers": [{"id": "x"}]}],
+    }
+    monkeypatch.setattr(flight, "_get_json", lambda url, timeout=25: fake)
+    out = flight._serpapi_cheapest("YOW", "LOS", "2026-12-15", "2026-12-29", "CAD", "economy")
+    assert out["price"] == 812.0 and out["source"] == "google"
+    assert out["price_level"] == "low"
+    assert out["typical_low"] == 900 and out["typical_high"] == 1600
+    assert out["carrier"] == "Air Canada" and out["stops"] == 1
+
+
+def test_noteworthy_when_google_turns_low():
+    hist = [{"date": "2026-08-28", "price": 1000, "currency": "CAD", "price_level": "typical"}]
+    rec = {"price": 1050, "price_level": "low"}  # not a new low, not a drop
+    assert FlightTracker().is_noteworthy(rec, hist) is True
+
+
+def test_not_noteworthy_when_already_low():
+    hist = [{"date": "2026-08-28", "price": 1000, "currency": "CAD", "price_level": "low"}]
+    rec = {"price": 1050, "price_level": "low"}
+    assert FlightTracker().is_noteworthy(rec, hist) is False
+
+
 def test_duffel_token_from_env(monkeypatch):
     monkeypatch.setenv("DUFFEL_TOKEN", "envtoken")
     assert flight._duffel_token() == "envtoken"

@@ -172,11 +172,10 @@ Resources:
         Tick:
           Type: Schedule
           Properties:
-            # Flight watches every 6 hours; other apps use the Schedule param
-            # (default: daily). The spaced rate() expression lives here in the
-            # template, never in samconfig parameter_overrides (which mangles
-            # values containing spaces).
-            Schedule: !If [IsFlight, "rate(6 hours)", !Ref Schedule]
+            # Flight checks once a day (keeps the SerpApi/Google Flights free
+            # tier comfortable). The expression lives here in the template, never
+            # in samconfig parameter_overrides (which mangles values with spaces).
+            Schedule: !If [IsFlight, "cron(0 13 * * ? *)", !Ref Schedule]
             Description: !Sub "Wake the ${Adapter} agent."
 
 Outputs:

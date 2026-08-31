@@ -5,16 +5,21 @@ The second Roost app, and proof the platform holds: a completely different job
 the cheapest fare from a live source, remembers every observation, asks Bedrock
 for a one-line verdict, and emails you only on a new low or a meaningful drop.
 
-The fare source is pluggable. Today it uses Duffel, with the token supplied as the
-DUFFEL_TOKEN env var on the function; when no token is set it falls back to a mock
-fare feed so the app is always demoable. Losing a provider costs one function, not
-the app (Amadeus closed its free tier mid-build; the swap was a single file).
+The fare source is pluggable, tried in order:
+  1. Google Flights (via SerpApi, SERPAPI_KEY) — real fares across airlines plus
+     Google's own price_level (low/typical/high) and typical range, so the agent
+     can judge a fare on its first run instead of waiting to build history.
+  2. Duffel (DUFFEL_TOKEN) — real fares, no insight.
+  3. A mock feed — always demoable, no keys.
+Keys are env vars set on the function, never in the template, CLI, or repo. Losing
+a provider costs one function, not the app (Amadeus closed its free tier mid-build).
 """
 
 import datetime
 import json
 import os
 import random
+import urllib.parse
 import urllib.request
 
 from roost import agent
@@ -48,9 +53,15 @@ class FlightTracker(Tracker):
     # --- lifecycle ---------------------------------------------------------
 
     def collect(self) -> dict:
-        live = _duffel_cheapest(
-            self.origin, self.destination, self.depart_date,
-            self.return_date, self.adults, self.currency, self.cabin,
+        live = (
+            _serpapi_cheapest(
+                self.origin, self.destination, self.depart_date,
+                self.return_date, self.currency, self.cabin,
+            )
+            or _duffel_cheapest(
+                self.origin, self.destination, self.depart_date,
+                self.return_date, self.adults, self.currency, self.cabin,
+            )
         )
         return live or _mock_fare(self.origin, self.destination, self.currency)
 
@@ -74,6 +85,9 @@ class FlightTracker(Tracker):
             "carrier": ctx.get("carrier", ""),
             "stops": ctx.get("stops"),
             "source": ctx.get("source", "mock"),
+            "price_level": ctx.get("price_level"),      # Google: low/typical/high
+            "typical_low": ctx.get("typical_low"),
+            "typical_high": ctx.get("typical_high"),
             "prev_min": prev_min,
             "is_new_low": prev_min is None or price < prev_min,
         }
@@ -94,10 +108,15 @@ class FlightTracker(Tracker):
         if not prices:
             return True  # first observation: send the baseline
         price = record["price"]
-        prev_min = min(prices)
+        if price < min(prices):
+            return True  # new all-time low
         recent = prices[0]
-        drop_pct = (recent - price) / recent * 100 if recent else 0
-        return price < prev_min or drop_pct >= self.drop_pct
+        if recent and (recent - price) / recent * 100 >= self.drop_pct:
+            return True  # a real drop since last check
+        # Google just rated it a low fare (state change worth flagging once).
+        if record.get("price_level") == "low" and history[0].get("price_level") != "low":
+            return True
+        return False
 
     def email(self, record: dict, url: str) -> tuple[str, str]:
         money = _money(record["price"], record["currency"])
@@ -110,11 +129,17 @@ class FlightTracker(Tracker):
             f"Cheapest now: {money}"
             f"{'  (' + record['carrier'] + ')' if record.get('carrier') else ''}\n"
         )
+        if record.get("price_level"):
+            body += f"Google rates this fare: {record['price_level']}"
+            if record.get("typical_low") is not None and record.get("typical_high") is not None:
+                body += (f" (typical {_money(record['typical_low'], record['currency'])}"
+                         f"–{_money(record['typical_high'], record['currency'])})")
+            body += "\n"
         if record.get("prev_min") is not None:
             body += f"Previous low seen: {_money(record['prev_min'], record['currency'])}\n"
         body += f"\n{record['advice']}\n\nPrice history: {url}\n"
         if record.get("source") == "mock":
-            body += "\n(mock fare feed, set the DUFFEL_TOKEN env var on the function for live prices)\n"
+            body += "\n(mock fare feed, set SERPAPI_KEY or DUFFEL_TOKEN on the function for live prices)\n"
         return subject, body
 
     def pages(self, record: dict, history: list) -> dict:
@@ -122,6 +147,70 @@ class FlightTracker(Tracker):
             "prices.json": json.dumps(_json_feed(history), ensure_ascii=False, default=str),
             "index.html": _render_page(record, history),
         }
+
+
+# --- Google Flights via SerpApi (primary; adds Google's price insight) ------
+
+_CABIN_CLASS = {"economy": "1", "premium_economy": "2", "business": "3", "first": "4"}
+
+
+def _serpapi_cheapest(origin, destination, depart, ret, currency, cabin):
+    """Cheapest fare + Google's price insight, or None (no key / no data / error).
+
+    Google Flights (via SerpApi) returns the lowest fare across airlines plus a
+    price_insights block: price_level (low/typical/high) and a typical price
+    range. That lets the agent judge a fare on its first run, before it has any
+    history of its own.
+    """
+    key = os.environ.get("SERPAPI_KEY")
+    if not key:
+        return None
+    params = {
+        "engine": "google_flights",
+        "departure_id": origin,
+        "arrival_id": destination,
+        "outbound_date": depart,
+        "currency": currency,
+        "travel_class": _CABIN_CLASS.get(cabin, "1"),
+        "type": "1" if ret else "2",  # 1 = round trip, 2 = one way
+        "hl": "en",
+        "api_key": key,
+    }
+    if ret:
+        params["return_date"] = ret
+    try:
+        data = _get_json("https://serpapi.com/search.json?" + urllib.parse.urlencode(params))
+        insight = data.get("price_insights") or {}
+        flights = (data.get("best_flights") or []) + (data.get("other_flights") or [])
+
+        price = insight.get("lowest_price")
+        if price is None:
+            candidates = [_num(f.get("price")) for f in flights]
+            candidates = [c for c in candidates if c is not None]
+            price = min(candidates) if candidates else None
+        if price is None:
+            return None
+
+        top = flights[0] if flights else {}
+        segments = top.get("flights") or [{}]
+        price_range = insight.get("typical_price_range") or []
+        return {
+            "price": float(price),
+            "currency": currency,
+            "carrier": (segments[0].get("airline") or "") if segments else "",
+            "stops": len(top.get("layovers") or []),
+            "source": "google",
+            "price_level": insight.get("price_level"),
+            "typical_low": _num(price_range[0]) if len(price_range) > 0 else None,
+            "typical_high": _num(price_range[1]) if len(price_range) > 1 else None,
+        }
+    except Exception:
+        return None
+
+
+def _get_json(url: str, timeout: int = 25) -> dict:
+    with urllib.request.urlopen(url, timeout=timeout) as resp:
+        return json.loads(resp.read())
 
 
 # --- Duffel (live fares) ---------------------------------------------------
@@ -227,12 +316,20 @@ def _verdict(record, prev_min, prev_recent):
     model = os.environ.get("MODEL_ID")
     if model and os.environ.get("FLIGHT_USE_BEDROCK", "true").lower() != "false":
         try:
+            cur = record["currency"]
+            google = ""
+            if record.get("price_level"):
+                google = f"Google rates this fare: {record['price_level']}.\n"
+                if record.get("typical_low") is not None and record.get("typical_high") is not None:
+                    google += (f"Typical price range: {_money(record['typical_low'], cur)} to "
+                               f"{_money(record['typical_high'], cur)}.\n")
             prompt = (
                 f"Route {record['route']}, depart {record['depart_date']}"
                 f"{', return ' + record['return_date'] if record['return_date'] else ', one-way'}.\n"
-                f"Cheapest right now: {_money(record['price'], record['currency'])}.\n"
-                f"Lowest seen before: {_money(prev_min, record['currency']) if prev_min is not None else 'none yet'}.\n"
-                f"Previous check: {_money(prev_recent, record['currency']) if prev_recent is not None else 'none yet'}.\n"
+                f"Cheapest right now: {_money(record['price'], cur)}.\n"
+                f"{google}"
+                f"Lowest seen before: {_money(prev_min, cur) if prev_min is not None else 'none yet'}.\n"
+                f"Previous check: {_money(prev_recent, cur) if prev_recent is not None else 'none yet'}.\n"
                 "Give the verdict."
             )
             packet = agent.generate(
@@ -247,6 +344,11 @@ def _verdict(record, prev_min, prev_recent):
 
 def _fallback_verdict(record, prev_min, prev_recent):
     price = record["price"]
+    level = record.get("price_level")
+    if level == "low":
+        return "Low fare", "Google rates this a low price. If the dates work, this is a good time to book."
+    if level == "high":
+        return "Priced high", "Google rates this above the typical range. Waiting looks reasonable."
     if prev_min is None:
         return "Baseline set", "First reading for this route. We'll watch it from here."
     if price < prev_min:
@@ -345,10 +447,14 @@ def _spark(prices: list) -> str:
 def _render_page(record: dict, history: list) -> str:
     import html
 
-    money = _money(record["price"], record["currency"])
+    cur = record["currency"]
+    money = _money(record["price"], cur)
     low = record.get("is_new_low")
     badge = ('<span class="badge low">new low</span>' if low
              else '<span class="badge hold">watching</span>')
+    level = record.get("price_level")
+    glevel = (f'<span class="badge {"low" if level == "low" else "hold"}">Google: {html.escape(str(level))}</span>'
+              if level else "")
     prices = _past_prices(history)
 
     rows = "\n".join(
@@ -358,20 +464,25 @@ def _render_page(record: dict, history: list) -> str:
     )
     dates = (f'{record["depart_date"]} / {record["return_date"]}'
              if record["return_date"] else f'{record["depart_date"]} · one-way')
-    source = "live via Duffel" if record.get("source") == "duffel" else "mock fare feed"
+    source = {"google": "live via Google Flights", "duffel": "live via Duffel"}.get(
+        record.get("source"), "mock fare feed")
+    typical = ""
+    if record.get("typical_low") is not None and record.get("typical_high") is not None:
+        typical = f' · Google typical {_money(record["typical_low"], cur)}–{_money(record["typical_high"], cur)}'
 
     body = (
         f'<div class="kicker">Flight Watch &middot; {html.escape(dates)}</div>\n'
         f'<div class="route">{html.escape(record["origin"])} &rarr; {html.escape(record["destination"])}</div>\n'
         f'<div class="when">updated {html.escape(str(record.get("id", "")).replace("T", " ").rstrip("Z"))} UTC · {source}</div>\n'
         f'<div class="card">\n'
-        f'  <div><span class="price">{money}</span>{badge}</div>\n'
+        f'  <div><span class="price">{money}</span>{badge}{glevel}</div>\n'
         f'  <div class="headline">{html.escape(str(record.get("headline", "")))}</div>\n'
         f'  <div class="advice">{html.escape(str(record.get("advice", "")))}</div>\n'
         f'  <div class="meta">'
         f'{"carrier " + html.escape(record["carrier"]) + " · " if record.get("carrier") else ""}'
         f'{("nonstop" if record.get("stops") == 0 else str(record.get("stops")) + " stop(s)") if record.get("stops") is not None else ""}'
-        f'{" · previous low " + _money(record["prev_min"], record["currency"]) if record.get("prev_min") is not None else ""}'
+        f'{" · previous low " + _money(record["prev_min"], cur) if record.get("prev_min") is not None else ""}'
+        f'{typical}'
         f'</div>\n'
         f'  {_spark(prices)}\n'
         f'</div>\n'
@@ -385,6 +496,6 @@ def _render_page(record: dict, history: list) -> str:
         "<link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap\">\n"
         f"<title>{html.escape(record['origin'])} → {html.escape(record['destination'])} · Flight Watch</title>\n"
         f"<style>{_CSS}</style>\n</head>\n<body>\n<div class=\"wrap\">\n{body}\n"
-        f"<footer>{html.escape(record['origin'])} &rarr; {html.escape(record['destination'])} · watched by an always-on agent · Duffel · Amazon Bedrock · Lambda · EventBridge · Roost</footer>\n"
+        f"<footer>{html.escape(record['origin'])} &rarr; {html.escape(record['destination'])} · watched by an always-on agent · {html.escape({'google': 'Google Flights', 'duffel': 'Duffel'}.get(record.get('source'), 'a mock feed'))} · Amazon Bedrock · Lambda · EventBridge · Roost</footer>\n"
         "</div>\n</body>\n</html>"
     )
